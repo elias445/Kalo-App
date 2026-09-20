@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+
+actor "Usuário" as user
+
+rectangle "Aplicativo Fitness" {
+  usecase "Realizar Autenticação" as UC1
+  usecase "Preencher Perfil e Objetivo" as UC2
+  usecase "Visualizar Plano e Metas" as UC3
+  usecase "Adaptar Plano de Treino" as UC4
+  usecase "Registrar Consumo Alimentar" as UC5
+  usecase "Buscar Alimentos" as UC6
+  usecase "Acompanhar Evolução" as UC7
+}
+
+user --> UC1
+user --> UC2
+user --> UC3
+user --> UC4
+user --> UC5
+user --> UC7
+
+UC5 ..> UC6 : <<include>>
+
+@enduml
