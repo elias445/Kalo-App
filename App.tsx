@@ -1,9 +1,9 @@
 import "./global.css";
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Home, Dumbbell, Utensils, User } from 'lucide-react-native';
 
 // Telas
 import HomeScreen from './src/screens/HomeScreen';
@@ -12,20 +12,15 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import ResumoRefeicoesScreen from './src/screens/ResumoRefeicoesScreen';
 import PesquisaAlimentosScreen from './src/screens/PesquisaAlimentosScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
+import CronogramaTreinoScreen from './src/screens/CronogramaTreinoScreen';
 
-const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-
-function DummyScreen() {
-  return <View className="flex-1 bg-[#13151A]" />;
-}
+const Tab = createBottomTabNavigator();
 
 function DiarioStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      
       <Stack.Screen name="ResumoRefeicoes" component={ResumoRefeicoesScreen} />
-      
       <Stack.Screen name="PesquisaAlimentos" component={PesquisaAlimentosScreen} />
     </Stack.Navigator>
   );
@@ -45,54 +40,49 @@ function AppTabs() {
         },
         tabBarActiveTintColor: '#00C2FF',
         tabBarInactiveTintColor: '#555',
+        tabBarShowLabel: false,
       }}
     >
       <Tab.Screen 
         name="Home" 
         component={HomeScreen} 
-        options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>🏠</Text>, tabBarLabel: 'Início' }}
+        options={{ 
+          tabBarIcon: ({ color }) => <Home color={color} size={30} strokeWidth={1.5} />, 
+        }}
       />
-      
+      <Tab.Screen 
+        name="Treino" 
+        component={CronogramaTreinoScreen} 
+        options={{ 
+          tabBarIcon: ({ color }) => <Dumbbell color={color} size={30} strokeWidth={1.5} />, 
+        }}
+      />
       <Tab.Screen 
         name="DiarioTab" 
         component={DiarioStack} 
-        options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>🍽️</Text>, tabBarLabel: 'Diário' }}
+        options={{ 
+          tabBarIcon: ({ color }) => <Utensils color={color} size={30} strokeWidth={1.5} />, 
+        }}
       />
       <Tab.Screen 
         name="Perfil" 
         component={PerfilScreen} 
-         options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>👤</Text>, tabBarLabel: 'Perfil' }}
+         options={{ 
+          tabBarIcon: ({ color }) => <User color={color} size={30} strokeWidth={1.5} />, 
+        }}
       />
     </Tab.Navigator>
   );
 }
 
 export default function App() {
-  const [telaAtual, setTelaAtual] = useState('home');
-
-  const ciclarTela = () => {
-    if (telaAtual === 'login') setTelaAtual('onboarding');
-    else if (telaAtual === 'onboarding') setTelaAtual('home');
-    else setTelaAtual('login');
-  };
-
   return (
-    <View className="flex-1 bg-[#13151A]">
-      {telaAtual === 'login' && <LoginScreen />}
-      {telaAtual === 'onboarding' && <OnboardingScreen />}
-      
-      {telaAtual === 'home' && (
-        <NavigationContainer>
-          <AppTabs />
-        </NavigationContainer>
-      )}
-
-      <TouchableOpacity 
-        onPress={ciclarTela}
-        className="absolute bottom-24 right-5 bg-[#00C2FF] p-4 rounded-full shadow-lg z-50"
-      >
-        <Text className="text-[#13151A] font-bold">Trocar Tela</Text>
-      </TouchableOpacity>
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Main" component={AppTabs} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

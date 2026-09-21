@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const navigation = useNavigation();
 
   const handleLogin = () => {
-    console.log('Login efetuado com:', email);
+    if (email.toLowerCase().trim() === 'teste' && senha === '123') {
+      navigation.navigate('Onboarding' as never);
+    } else {
+      Alert.alert('Acesso negado', 'Email ou senha incorretos. Tente novamente.');
+    }
   };
 
   return (
@@ -14,7 +20,6 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-[#13151A] justify-center px-6 w-full"
     >
-      
       <View className="items-center mb-12">
         <Text className="text-[#00C2FF] text-5xl font-extrabold tracking-wider">
           Kalo
@@ -22,13 +27,10 @@ export default function LoginScreen() {
       </View>
 
       <View className="flex flex-col gap-4 w-full">
-        <Text className="text-white text-base font-bold mb-2">Entrar</Text>
-
-        
         <View>
-          <Text className="text-gray-400 text-xs font-medium mb-1 ml-1">Email</Text>
+          <Text className="text-white text-base font-bold mb-2 ml-1">Email</Text>
           <TextInput
-            className="w-full h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white text-base"
+            className="w-full h-14 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white text-base"
             placeholder="E-mail"
             placeholderTextColor="#555"
             value={email}
@@ -38,11 +40,10 @@ export default function LoginScreen() {
           />
         </View>
 
-        
         <View className="mt-2">
-          <Text className="text-gray-400 text-xs font-medium mb-1 ml-1">Senha</Text>
+          <Text className="text-white text-base font-bold mb-2 ml-1">Senha</Text>
           <TextInput
-            className="w-full h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white text-base"
+            className="w-full h-14 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white text-base"
             placeholder="********"
             placeholderTextColor="#555"
             value={senha}
@@ -53,13 +54,9 @@ export default function LoginScreen() {
 
         <TouchableOpacity 
           onPress={handleLogin}
-          className="w-full h-12 bg-[#00C2FF] rounded-full items-center justify-center mt-6 active:bg-[#009FCC]"
+          className="w-full h-14 bg-[#00C2FF] rounded-xl items-center justify-center mt-6 active:bg-[#009FCC]"
         >
-          <Text className="text-[#13151A] font-bold text-lg">Entrar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="items-center mt-4">
-          <Text className="text-gray-400 text-sm">Criar conta</Text>
+          <Text className="text-[#13151A] font-bold text-lg">Login</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

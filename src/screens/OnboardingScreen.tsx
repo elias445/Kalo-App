@@ -1,87 +1,167 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Modal } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { ChevronDown, X } from 'lucide-react-native';
 
 export default function OnboardingScreen() {
-  const [objetivo, setObjetivo] = useState('Emagrecer');
+  const [sexo, setSexo] = useState('');
+  const [idade, setIdade] = useState('');
+  const [altura, setAltura] = useState('');
+  const [peso, setPeso] = useState('');
+  const [objetivo, setObjetivo] = useState('Selecione');
+  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<'sexo' | 'objetivo' | null>(null);
+
+  const navigation = useNavigation();
+
+  const opcoesSexo = ['Masculino', 'Feminino', 'Prefiro não informar'];
+  const opcoesObjetivo = [
+    'Emagrecimento',
+    'Hipertrofia',
+    'Definição Muscular',
+    'Manutenção e Saúde',
+    'Performance Esportiva',
+    'Bem-estar e Saúde Mental'
+  ];
+
+  const abrirModal = (tipo: 'sexo' | 'objetivo') => {
+    setModalType(tipo);
+    setModalVisible(true);
+  };
+
+  const selecionarOpcao = (item: string) => {
+    if (modalType === 'sexo') setSexo(item);
+    if (modalType === 'objetivo') setObjetivo(item);
+    setModalVisible(false);
+  };
+
+  const listaAtual = modalType === 'sexo' ? opcoesSexo : opcoesObjetivo;
 
   return (
     <SafeAreaView className="flex-1 bg-[#13151A]">
-      <ScrollView className="flex-1 px-6 pt-8">
-        
-        <TouchableOpacity className="mb-6 w-10">
-          <Text className="text-gray-400 text-xl font-bold">{'<'}</Text>
-        </TouchableOpacity>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView className="flex-1 px-6 pt-16">
 
-        
-        <Text className="text-white text-2xl font-bold mb-8">Configure seu Perfil</Text>
+          <Text className="text-white text-2xl font-bold text-center mb-10">
+            Dados Biométricos
+          </Text>
 
-        <View className="flex-row flex-wrap justify-between mb-8">
-          <View className="w-[48%] mb-4">
-            <Text className="text-gray-400 text-xs mb-1 ml-1">Peso</Text>
-            <TextInput
-              className="w-full h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
-              placeholder="kg"
-              placeholderTextColor="#555"
-              keyboardType="numeric"
-            />
+          <View className="flex flex-col gap-6 mb-12">
+            
+            <View className="flex-row justify-between items-center">
+              <Text className="text-white text-lg">Sexo</Text>
+              <TouchableOpacity 
+                onPress={() => abrirModal('sexo')}
+                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl flex-row justify-between items-center px-4"
+              >
+                <Text className="text-white flex-1 mr-2" numberOfLines={1}>
+                  {sexo || 'Selecione'}
+                </Text>
+                <ChevronDown color="#9CA3AF" size={20} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row justify-between items-center">
+              <Text className="text-white text-lg">Idade</Text>
+              <TextInput
+                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
+                keyboardType="numeric"
+                value={idade}
+                onChangeText={setIdade}
+              />
+            </View>
+
+            <View className="flex-row justify-between items-center">
+              <Text className="text-white text-lg">Altura (cm)</Text>
+              <TextInput
+                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
+                keyboardType="numeric"
+                value={altura}
+                onChangeText={setAltura}
+              />
+            </View>
+
+            <View className="flex-row justify-between items-center">
+              <Text className="text-white text-lg">Peso (kg)</Text>
+              <TextInput
+                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
+                keyboardType="numeric"
+                value={peso}
+                onChangeText={setPeso}
+              />
+            </View>
           </View>
 
-          <View className="w-[48%] mb-4">
-            <Text className="text-gray-400 text-xs mb-1 ml-1">Altura</Text>
-            <TextInput
-              className="w-full h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
-              placeholder="cm"
-              placeholderTextColor="#555"
-              keyboardType="numeric"
-            />
-          </View>
+          <Text className="text-white text-2xl font-bold text-center mb-8">
+            Qual o seu objetivo?
+          </Text>
 
-          
-          <View className="w-[48%] mb-4">
-            <Text className="text-gray-400 text-xs mb-1 ml-1">Idade</Text>
-            <TextInput
-              className="w-full h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
-              placeholder="Anos"
-              placeholderTextColor="#555"
-              keyboardType="numeric"
-            />
-          </View>
+          <TouchableOpacity 
+            onPress={() => abrirModal('objetivo')}
+            className="w-full h-14 bg-[#1C1F26] border border-[#2A2E39] rounded-xl flex-row justify-between items-center px-4 mb-12"
+          >
+            <Text className="text-white text-base">{objetivo}</Text>
+            <ChevronDown color="#9CA3AF" size={20} strokeWidth={2} />
+          </TouchableOpacity>
 
-          
-          <View className="w-[48%] mb-4">
-            <Text className="text-gray-400 text-xs mb-1 ml-1">Sexo</Text>
-            <TouchableOpacity className="w-full h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 flex-row justify-between items-center">
-              <Text className="text-gray-500 text-sm">Selecione</Text>
-              <Text className="text-gray-400 text-xs">▼</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Main' as never)}
+            className="w-full h-14 bg-[#00C2FF] rounded-xl items-center justify-center active:bg-[#009FCC] mb-10"
+          >
+            <Text className="text-[#13151A] font-bold text-lg">Gerar plano de treino</Text>
+          </TouchableOpacity>
 
-        
-        <View className="flex flex-col gap-3 mb-12">
-          {['Emagrecer', 'Manter', 'Hipertrofia'].map((item) => (
-            <TouchableOpacity
-              key={item}
-              onPress={() => setObjetivo(item)}
-              className={`w-full h-12 rounded-xl items-center justify-center border ${
-                objetivo === item 
-                  ? 'bg-[#00C2FF] border-[#00C2FF]' 
-                  : 'bg-[#1C1F26] border-[#2A2E39]'
-              }`}
-            >
-              <Text className={`font-bold text-base ${objetivo === item ? 'text-[#13151A]' : 'text-white'}`}>
-                {item}
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          className="flex-1 bg-black/60 justify-center items-center px-6" 
+          activeOpacity={1} 
+          onPress={() => setModalVisible(false)}
+        >
+          <View className="bg-[#1C1F26] w-full border border-[#2A2E39] rounded-2xl p-6" onStartShouldSetResponder={() => true}>
+            
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-white text-xl font-bold">
+                {modalType === 'sexo' ? 'Selecione o Sexo' : 'Selecione o Objetivo'}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <X color="#9CA3AF" size={24} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
 
-        
-        <TouchableOpacity className="w-full h-12 bg-[#00C2FF] rounded-full items-center justify-center active:bg-[#009FCC] mb-10">
-          <Text className="text-[#13151A] font-bold text-lg">Gerar Plano</Text>
+            <View>
+              {listaAtual.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => selecionarOpcao(item)}
+                  className={`py-4 ${index !== listaAtual.length - 1 ? 'border-b border-[#2A2E39]' : ''}`}
+                >
+                  <Text className={`text-base font-bold ${
+                    (modalType === 'sexo' && sexo === item) || (modalType === 'objetivo' && objetivo === item)
+                      ? 'text-[#00C2FF]'
+                      : 'text-white'
+                  }`}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+          </View>
         </TouchableOpacity>
-        
-      </ScrollView>
+      </Modal>
+
     </SafeAreaView>
   );
 }
