@@ -10,8 +10,6 @@ O **Kalo** é um aplicativo mobile que reúne em um só lugar o que normalmente 
 
 A ideia é que o usuário informe seus dados e seu objetivo, receba um plano personalizado e acompanhe tudo (treinos, alimentação, peso) em uma interface moderna, em tema escuro com a identidade visual "Azul Elétrico". Na aba **Comunidade**, ele pode desafiar amigos e disputar um ranking.
 
-> **Estado atual:** o app é um protótipo funcional de front-end. Todas as telas e fluxos funcionam, mas os dados ficam apenas em memória e parte deles é de exemplo (veja [Limitações](#limitações-do-protótipo)). O backend está nos planos futuros.
-
 ---
 
 ## Funcionalidades
@@ -145,16 +143,6 @@ npx expo start -c
 * **No emulador:** pressione `a` no terminal para o Android ou `i` para o simulador do iOS.
 
 **Login de teste:** use o e-mail `teste` e a senha `123`, ou crie uma conta pela tela de cadastro.
-
----
-
-## Limitações do Protótipo
-
-* **Sem backend:** os dados ficam em memória e voltam ao padrão quando o app reinicia.
-* **Alimentos:** a tabela de 14 alimentos e seus valores de kcal por 100 g foi escrita manualmente e é aproximada. O app ainda não guarda macros por alimento, então os macros da tela inicial são estimados proporcionalmente às calorias registradas.
-* **Comunidade:** pontos, amigos e atividades são dados de exemplo. A pontuação ainda não é calculada a partir dos treinos e da dieta reais, e os convites não são aceitos por ninguém.
-* **Calendário e estatísticas do perfil:** o histórico de treinos e os números de treinos e média diária são simulados.
-* **Metas nutricionais:** são estimativas gerais e não substituem a orientação de um profissional de saúde.
 
 ---
 
