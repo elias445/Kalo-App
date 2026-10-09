@@ -18,6 +18,9 @@ O design do projeto adota a identidade visual **"Azul Elétrico"**, utilizando u
 * **📊 Dashboard (Home):** Resumo visual rápido de calorias consumidas, metas de macronutrientes e atalho direto para o treino planejado do dia.
 * **🍽️ Plano Diário e Pesquisa:** Fluxo completo para visualizar refeições do dia (Café, Almoço, Jantar), com sistema de busca de alimentos e seleção de gramas (`DiarioScreen` e `PesquisaAlimentosScreen`).
 * **👤 Perfil e Evolução:** Área do usuário contendo um gráfico de acompanhamento de peso corporal e um calendário visual detalhando a frequência de treinos (`PerfilScreen`).
+* **🏋️ Treino:** Cronograma semanal com edição/adição de exercícios (`EditarExercicioScreen`), tela do treino do dia com checklist (`TreinoDoDiaScreen`) e plano gerado após o onboarding com metas de calorias e macros (`PlanoGeradoScreen`).
+* **🍎 Refeições:** Detalhe de cada refeição com remoção de itens (`DetalheRefeicaoScreen`) e escolha da refeição ao adicionar um alimento.
+* **⚖️ Conta e Perfil:** Cadastro (`CadastroScreen`), edição de perfil (`EditarPerfilScreen`) e registro de peso que atualiza o gráfico (`RegistrarPesoScreen`).
 * **🧭 Navegação Avançada:** Sistema de abas inferiores (Home Bar) integrado com pilhas de navegação (Stack Navigation) para transições fluidas.
 
 ---

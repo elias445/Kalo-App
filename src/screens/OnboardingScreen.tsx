@@ -1,167 +1,103 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ChevronDown, X } from 'lucide-react-native';
+import { ChevronDown, Zap, Target } from 'lucide-react-native';
+import Screen from '../components/Screen';
+import { NumberRow } from '../components/Field';
+import OptionSheet from '../components/OptionSheet';
+import { GradientButton } from '../components/Buttons';
+import { BackButton, Badge, Chip, ProgressBar } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { OBJETIVOS, SEXOS } from '../data/perfil';
+import { colors } from '../theme';
 
 export default function OnboardingScreen() {
-  const [sexo, setSexo] = useState('');
-  const [idade, setIdade] = useState('');
-  const [altura, setAltura] = useState('');
-  const [peso, setPeso] = useState('');
-  const [objetivo, setObjetivo] = useState('Selecione');
-  
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState<'sexo' | 'objetivo' | null>(null);
-
   const navigation = useNavigation();
+  const { perfil, pesoAtual, atualizarPerfil, registrarPeso } = useApp();
 
-  const opcoesSexo = ['Masculino', 'Feminino', 'Prefiro não informar'];
-  const opcoesObjetivo = [
-    'Emagrecimento',
-    'Hipertrofia',
-    'Definição Muscular',
-    'Manutenção e Saúde',
-    'Performance Esportiva',
-    'Bem-estar e Saúde Mental'
-  ];
+  const [sexo, setSexo] = useState(perfil.sexo);
+  const [idade, setIdade] = useState(perfil.idade);
+  const [altura, setAltura] = useState(perfil.altura);
+  const [peso, setPeso] = useState(String(pesoAtual).replace('.', ','));
+  const [objetivo, setObjetivo] = useState(perfil.objetivo);
+  const [sheetAberto, setSheetAberto] = useState(false);
 
-  const abrirModal = (tipo: 'sexo' | 'objetivo') => {
-    setModalType(tipo);
-    setModalVisible(true);
+  const gerarPlano = () => {
+    const pesoNumero = parseFloat(peso.replace(',', '.'));
+    if (!Number(idade) || !Number(altura) || !pesoNumero || !objetivo) {
+      Alert.alert('Dados incompletos', 'Preencha idade, altura, peso e objetivo para gerar seu plano.');
+      return;
+    }
+    atualizarPerfil({ sexo, idade, altura, objetivo });
+    if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
+    navigation.navigate('PlanoGerado' as never);
   };
-
-  const selecionarOpcao = (item: string) => {
-    if (modalType === 'sexo') setSexo(item);
-    if (modalType === 'objetivo') setObjetivo(item);
-    setModalVisible(false);
-  };
-
-  const listaAtual = modalType === 'sexo' ? opcoesSexo : opcoesObjetivo;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#13151A]">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+    <Screen>
+      <View className="flex-row justify-between items-center mb-6">
+        <BackButton />
+        <Badge label="PASSO 1 de 2" tone="cyan" />
+      </View>
+
+      <View className="mb-8">
+        <ProgressBar progress={0.5} height={4} />
+      </View>
+
+      <Text className="text-white text-3xl font-extrabold">Dados Biométricos</Text>
+      <Text className="text-muted text-sm mt-2 mb-8" style={{ lineHeight: 20 }}>
+        Personalize as métricas fundamentais para o cálculo calórico e prescrição de carga.
+      </Text>
+
+      <Text className="text-white text-sm font-bold mb-3">Sexo Biológico</Text>
+      <View className="flex-row mb-5" style={{ gap: 10 }}>
+        {SEXOS.map((opcao) => (
+          <Chip key={opcao} label={opcao} selected={sexo === opcao} onPress={() => setSexo(opcao)} flex />
+        ))}
+      </View>
+
+      <View style={{ gap: 12 }} className="mb-7">
+        <NumberRow title="Idade" unit="anos" value={idade} onChangeText={setIdade} />
+        <NumberRow title="Altura" unit="cm" value={altura} onChangeText={setAltura} />
+        <NumberRow title="Peso atual" unit="kg" value={peso} onChangeText={setPeso} />
+      </View>
+
+      <Text className="text-white text-sm font-bold mb-3">Qual o seu objetivo?</Text>
+      <TouchableOpacity
+        onPress={() => setSheetAberto(true)}
+        activeOpacity={0.8}
+        className="flex-row items-center justify-between px-5 mb-10"
+        style={{ height: 64, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface }}
       >
-        <ScrollView className="flex-1 px-6 pt-16">
-
-          <Text className="text-white text-2xl font-bold text-center mb-10">
-            Dados Biométricos
-          </Text>
-
-          <View className="flex flex-col gap-6 mb-12">
-            
-            <View className="flex-row justify-between items-center">
-              <Text className="text-white text-lg">Sexo</Text>
-              <TouchableOpacity 
-                onPress={() => abrirModal('sexo')}
-                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl flex-row justify-between items-center px-4"
-              >
-                <Text className="text-white flex-1 mr-2" numberOfLines={1}>
-                  {sexo || 'Selecione'}
-                </Text>
-                <ChevronDown color="#9CA3AF" size={20} strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-row justify-between items-center">
-              <Text className="text-white text-lg">Idade</Text>
-              <TextInput
-                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
-                keyboardType="numeric"
-                value={idade}
-                onChangeText={setIdade}
-              />
-            </View>
-
-            <View className="flex-row justify-between items-center">
-              <Text className="text-white text-lg">Altura (cm)</Text>
-              <TextInput
-                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
-                keyboardType="numeric"
-                value={altura}
-                onChangeText={setAltura}
-              />
-            </View>
-
-            <View className="flex-row justify-between items-center">
-              <Text className="text-white text-lg">Peso (kg)</Text>
-              <TextInput
-                className="w-48 h-12 bg-[#1C1F26] border border-[#2A2E39] rounded-xl px-4 text-white"
-                keyboardType="numeric"
-                value={peso}
-                onChangeText={setPeso}
-              />
-            </View>
-          </View>
-
-          <Text className="text-white text-2xl font-bold text-center mb-8">
-            Qual o seu objetivo?
-          </Text>
-
-          <TouchableOpacity 
-            onPress={() => abrirModal('objetivo')}
-            className="w-full h-14 bg-[#1C1F26] border border-[#2A2E39] rounded-xl flex-row justify-between items-center px-4 mb-12"
+        <View className="flex-row items-center flex-1 mr-2" style={{ gap: 12 }}>
+          <View
+            className="items-center justify-center"
+            style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(0,209,255,0.10)', borderWidth: 1, borderColor: 'rgba(0,209,255,0.25)' }}
           >
-            <Text className="text-white text-base">{objetivo}</Text>
-            <ChevronDown color="#9CA3AF" size={20} strokeWidth={2} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Main' as never)}
-            className="w-full h-14 bg-[#00C2FF] rounded-xl items-center justify-center active:bg-[#009FCC] mb-10"
-          >
-            <Text className="text-[#13151A] font-bold text-lg">Gerar plano de treino</Text>
-          </TouchableOpacity>
-
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity 
-          className="flex-1 bg-black/60 justify-center items-center px-6" 
-          activeOpacity={1} 
-          onPress={() => setModalVisible(false)}
-        >
-          <View className="bg-[#1C1F26] w-full border border-[#2A2E39] rounded-2xl p-6" onStartShouldSetResponder={() => true}>
-            
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-white text-xl font-bold">
-                {modalType === 'sexo' ? 'Selecione o Sexo' : 'Selecione o Objetivo'}
-              </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <X color="#9CA3AF" size={24} strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-
-            <View>
-              {listaAtual.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => selecionarOpcao(item)}
-                  className={`py-4 ${index !== listaAtual.length - 1 ? 'border-b border-[#2A2E39]' : ''}`}
-                >
-                  <Text className={`text-base font-bold ${
-                    (modalType === 'sexo' && sexo === item) || (modalType === 'objetivo' && objetivo === item)
-                      ? 'text-[#00C2FF]'
-                      : 'text-white'
-                  }`}>
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            
+            <Target color={colors.cyan} size={18} strokeWidth={2} />
           </View>
-        </TouchableOpacity>
-      </Modal>
+          <Text className="text-white font-bold text-sm flex-1" numberOfLines={1}>{objetivo}</Text>
+        </View>
+        <ChevronDown color={colors.cyan} size={20} strokeWidth={2.2} />
+      </TouchableOpacity>
 
-    </SafeAreaView>
+      <GradientButton
+        variant="cyan"
+        uppercase
+        label="Gerar plano de treino"
+        onPress={gerarPlano}
+        icon={<Zap color={colors.ink} size={18} fill={colors.ink} />}
+      />
+      <Text className="text-dim text-xs text-center mt-4">Cálculo baseado na equação de Mifflin-St Jeor</Text>
+
+      <OptionSheet
+        visible={sheetAberto}
+        title="Selecione o objetivo"
+        options={OBJETIVOS.map((o) => o.nome)}
+        selected={objetivo}
+        onSelect={(opcao) => { setObjetivo(opcao); setSheetAberto(false); }}
+        onClose={() => setSheetAberto(false)}
+      />
+    </Screen>
   );
 }

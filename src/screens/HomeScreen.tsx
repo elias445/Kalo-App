@@ -1,71 +1,107 @@
 import React from 'react';
-import { View, Text, ScrollView, SafeAreaView, Platform } from 'react-native';
-import { PieChart } from 'react-native-gifted-charts';
-import { Dumbbell } from 'lucide-react-native';
+import { View, Text, Alert } from 'react-native';
+import { Bell, Dumbbell, Clock, Flame, Layers, Moon, Wheat, Beef, Droplet } from 'lucide-react-native';
+import Screen from '../components/Screen';
+import Card from '../components/Card';
+import HeroCard from '../components/HeroCard';
+import RingProgress from '../components/RingProgress';
+import { Badge, IconButton, InfoChip, MiniTile, ProgressBar, SectionLabel } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { diaDeHoje, estimarTreino } from '../data/treino';
+import { colors } from '../theme';
+
+const SEMANA = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
+const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 export default function HomeScreen() {
-  const caloriasConsumidas = 1250;
-  const caloriasMeta = 2100;
-  const caloriasRestantes = caloriasMeta - caloriasConsumidas;
+  const { perfil, metas, totalConsumido, plano } = useApp();
 
-  const pieData = [
-    { value: caloriasConsumidas, color: '#00C2FF' }, 
-    { value: caloriasRestantes, color: '#2A2E39' },  
-  ];
+  const hoje = new Date();
+  const dataTexto = `${SEMANA[hoje.getDay()]}, ${hoje.getDate()} DE ${MESES[hoje.getMonth()]}`;
+  const primeiroNome = perfil.nome.trim().split(' ')[0];
+
+  const restantes = metas.calorias - totalConsumido;
+  const progresso = totalConsumido / metas.calorias;
+
+  // Macros consumidos estimados de forma proporcional às calorias já registradas
+  const proporcao = Math.min(1, progresso);
+  const macros = [
+    { nome: 'Carboidratos', meta: metas.carboidrato, Icone: Wheat },
+    { nome: 'Proteínas', meta: metas.proteina, Icone: Beef },
+    { nome: 'Gorduras', meta: metas.gordura, Icone: Droplet },
+  ].map((m) => ({ ...m, atual: Math.round(m.meta * proporcao) }));
+
+  const treino = plano[diaDeHoje()];
+  const descanso = treino.exercicios.length === 0;
+  const estimativa = estimarTreino(treino.exercicios);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#13151A]">
-      <ScrollView className={`flex-1 px-6 ${Platform.OS === 'android' ? 'pt-12' : 'pt-4'}`}>
-        
-        <View className="items-center justify-center mb-6">
-          <Text className="text-[#00C2FF] text-3xl font-extrabold tracking-widest">Kalo</Text>
+    <Screen tabbed>
+      <View className="flex-row justify-between items-start mb-6">
+        <View>
+          <SectionLabel dot>{dataTexto}</SectionLabel>
+          <Text className="text-white text-3xl font-extrabold mt-2">Olá, {primeiroNome}!</Text>
         </View>
-        
-        <View className="items-center mb-8 mt-2">
-          <PieChart
-            donut
-            innerRadius={90}
-            radius={120}
-            data={pieData}
-            innerCircleColor="#13151A" 
-            centerLabelComponent={() => {
-              return (
-                <View className="items-center justify-center">
-                  <Text className="text-white text-lg font-bold mb-1">Calorias</Text>
-                  <Text className="text-white text-3xl font-extrabold mb-1">
-                    {caloriasConsumidas}/{caloriasMeta}
-                  </Text>
-                  <Text className="text-gray-400 text-sm font-medium">Meta: {caloriasMeta}</Text>
-                </View>
-              );
-            }}
-          />
-        </View>
+        <IconButton onPress={() => Alert.alert('Notificações', 'Você não tem notificações novas.')}>
+          <Bell color={colors.muted} size={20} strokeWidth={2} />
+        </IconButton>
+      </View>
 
-        <View className="flex-row justify-between w-full mb-10">
-          <View className="bg-[#1C1F26] border border-[#2A2E39] rounded-2xl w-[31%] py-5 items-center shadow-lg">
-            <Text className="text-white font-bold text-base">Carbo.</Text>
-            <Text className="text-gray-400 text-sm mt-1">150g</Text>
+      <HeroCard padding={20} style={{ marginBottom: 16 }} contentStyle={{ alignItems: 'center' }}>
+        <RingProgress size={240} stroke={16} progress={progresso}>
+          <View className="items-center">
+            <Text className="text-muted text-xs font-bold" style={{ letterSpacing: 2 }}>CALORIAS</Text>
+            <View className="flex-row items-end mt-1">
+              <Text className="text-white font-extrabold" style={{ fontSize: 38, letterSpacing: -1 }}>{milhar(totalConsumido)}</Text>
+              <Text className="text-muted font-bold text-base mb-1.5 ml-1">/ {milhar(metas.calorias)}</Text>
+            </View>
+            <View className="mt-2">
+              <Badge
+                tone={restantes >= 0 ? 'cyan' : 'violet'}
+                label={restantes >= 0 ? `Restam ${milhar(restantes)} kcal` : `${milhar(-restantes)} kcal acima`}
+              />
+            </View>
+            <Text className="text-muted text-sm font-semibold mt-2.5">
+              Meta diária: <Text className="text-white font-bold">{milhar(metas.calorias)} kcal</Text>
+            </Text>
           </View>
-          <View className="bg-[#1C1F26] border border-[#2A2E39] rounded-2xl w-[31%] py-5 items-center shadow-lg">
-            <Text className="text-white font-bold text-base">Prot.</Text>
-            <Text className="text-gray-400 text-sm mt-1">100g</Text>
-          </View>
-          <View className="bg-[#1C1F26] border border-[#2A2E39] rounded-2xl w-[31%] py-5 items-center shadow-lg">
-            <Text className="text-white font-bold text-base">Gord.</Text>
-            <Text className="text-gray-400 text-sm mt-1">50g</Text>
-          </View>
-        </View>
+        </RingProgress>
+      </HeroCard>
 
-        <View className="bg-[#1C1F26] border border-[#2A2E39] rounded-3xl p-8 items-center w-full shadow-lg mb-10">
-          <Text className="text-white font-extrabold text-2xl mb-2">Treino de hoje</Text>
-          <Text className="text-gray-400 text-lg mb-6">Costas & Bíceps</Text>
-          <View className="w-20 h-20 bg-[#00C2FF]/10 rounded-full items-center justify-center">
-            <Dumbbell color="#00C2FF" size={40} strokeWidth={2} />
-          </View>
-        </View>
+      <View className="flex-row mb-4" style={{ gap: 10 }}>
+        {macros.map((m) => (
+          <Card key={m.nome} className="flex-1 p-3.5 rounded-[22px]">
+            <MiniTile size={34}>
+              <m.Icone color={colors.cyan} size={17} strokeWidth={2} />
+            </MiniTile>
+            <Text className="text-muted text-xs font-bold mt-3" numberOfLines={1}>{m.nome}</Text>
+            <Text className="text-white font-extrabold text-xl mt-0.5">{m.atual}<Text className="text-muted text-sm">g</Text></Text>
+            <Text className="text-dim text-[11px] mt-0.5 mb-2.5">de {m.meta}g</Text>
+            <ProgressBar progress={m.atual / m.meta} height={4} />
+          </Card>
+        ))}
+      </View>
 
-      </ScrollView>
-    </SafeAreaView>
+      <HeroCard padding={20}>
+        <View style={{ position: 'absolute', right: -6, top: -10, opacity: 0.1 }}>
+          {descanso ? <Moon color="#FFFFFF" size={110} strokeWidth={1.4} /> : <Dumbbell color="#FFFFFF" size={110} strokeWidth={1.4} />}
+        </View>
+        <SectionLabel dot>Treino de hoje</SectionLabel>
+        <Text className="text-white font-extrabold mt-2" style={{ fontSize: 26, lineHeight: 32 }}>
+          {descanso ? 'Dia de descanso' : treino.titulo}
+        </Text>
+        {descanso ? (
+          <Text className="text-muted text-sm mt-2">Recupere-se bem: o sono também é parte do treino.</Text>
+        ) : (
+          <View className="flex-row flex-wrap mt-4" style={{ gap: 8 }}>
+            <InfoChip icon={<Clock color={colors.cyan} size={13} strokeWidth={2.4} />} texto={`${estimativa.minutos} min`} />
+            <InfoChip icon={<Flame color={colors.cyan} size={13} strokeWidth={2.4} />} texto={`~${estimativa.kcal} kcal`} />
+            <InfoChip icon={<Layers color={colors.cyan} size={13} strokeWidth={2.4} />} texto={`${treino.exercicios.length} exercícios`} />
+          </View>
+        )}
+      </HeroCard>
+    </Screen>
   );
 }
