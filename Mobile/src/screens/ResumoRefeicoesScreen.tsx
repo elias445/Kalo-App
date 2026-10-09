@@ -1,66 +1,115 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Search, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Plus, Coffee, Apple, Utensils, Sandwich, Soup, Moon } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import Screen from '../components/Screen';
+import Card from '../components/Card';
+import RingProgress from '../components/RingProgress';
+import { Badge, IconButton, SectionLabel } from '../components/UI';
+import { REFEICOES, useApp } from '../context/AppContext';
+import { colors } from '../theme';
+
+const ICONES: Record<string, LucideIcon> = {
+  'Café da manhã': Coffee,
+  'Lanche da manhã': Apple,
+  'Almoço': Utensils,
+  'Lanche da tarde': Sandwich,
+  'Jantar': Soup,
+  'Ceia': Moon,
+};
+
+const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 export default function ResumoRefeicoesScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const { refeicoes, metas, totalConsumido } = useApp();
 
-  const irParaPesquisa = () => {
-    navigation.navigate('PesquisaAlimentos' as never); 
-  };
+  const progresso = totalConsumido / metas.calorias;
+  const restantes = metas.calorias - totalConsumido;
+
+  // As refeições formam uma grade de 2 colunas que ocupa o espaço restante (sem scroll)
+  const linhas = [0, 2, 4].map((i) => REFEICOES.slice(i, i + 2));
 
   return (
-    <SafeAreaView className="flex-1 bg-[#13151A]">
-      <ScrollView className={`flex-1 px-6 ${Platform.OS === 'android' ? 'pt-16' : 'pt-8'}`}>
-        
-        <TouchableOpacity 
-          onPress={irParaPesquisa}
-          className="bg-[#1C1F26] h-14 rounded-xl flex-row justify-between items-center px-4 mb-10 border border-[#2A2E39]"
+    <Screen tabbed scroll={false} contentStyle={{ paddingBottom: 16 }}>
+      <View className="mb-5">
+        <SectionLabel dot>Nutrição diária</SectionLabel>
+        <Text className="text-white text-3xl font-extrabold mt-1">Refeições</Text>
+      </View>
+
+      <View
+        className="bg-surface mb-4"
+        style={{ borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0,209,255,0.25)' }}
+      >
+        <LinearGradient
+          colors={['rgba(10,92,255,0.38)', 'rgba(0,209,255,0.04)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flexDirection: 'row', alignItems: 'center', padding: 18, gap: 18 }}
         >
-          <Text className="text-white font-bold text-base">Pesquisar alimento</Text>
-          <Search color="#9CA3AF" size={20} strokeWidth={2} />
-        </TouchableOpacity>
-
-        <View className="mb-6 border-b border-[#2A2E39] pb-4 flex-row justify-between items-center">
-          <View>
-            <Text className="text-white font-bold text-xl mb-1">• Café da manhã</Text>
-            <Text className="text-gray-400 text-sm font-medium">Pão francês, Ovos...</Text>
-            <Text className="text-white font-bold text-sm mt-1">350 kcal</Text>
+          <RingProgress size={96} stroke={10} progress={progresso}>
+            <Text className="text-white font-extrabold text-lg">{Math.round(progresso * 100)}%</Text>
+          </RingProgress>
+          <View className="flex-1">
+            <Text className="text-muted text-[11px] font-bold" style={{ letterSpacing: 1.6 }}>TOTAL CONSUMIDO</Text>
+            <View className="flex-row items-end mt-1">
+              <Text className="text-white font-extrabold" style={{ fontSize: 34, lineHeight: 40, letterSpacing: -1 }}>{milhar(totalConsumido)}</Text>
+              <Text className="text-muted font-bold text-sm mb-1.5 ml-1">kcal</Text>
+            </View>
+            <Text className="text-muted text-xs mb-2">Meta diária: {milhar(metas.calorias)} kcal</Text>
+            <Badge
+              tone={restantes >= 0 ? 'cyan' : 'violet'}
+              label={restantes >= 0 ? `Restam ${milhar(restantes)} kcal` : `${milhar(-restantes)} kcal acima`}
+            />
           </View>
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-             <Plus color="#FFFFFF" size={28} strokeWidth={1.5} />
-          </TouchableOpacity>
-        </View>
+        </LinearGradient>
+      </View>
 
-        <View className="mb-6 border-b border-[#2A2E39] pb-4 flex-row justify-between items-center">
-          <View>
-            <Text className="text-white font-bold text-xl mb-1">• Almoço</Text>
-            <Text className="text-gray-400 text-sm font-medium">Arroz, Feijão, Carne, Salada...</Text>
-            <Text className="text-white font-bold text-sm mt-1">550 kcal</Text>
+      <View style={{ flex: 1, gap: 12 }}>
+        {linhas.map((linha, i) => (
+          <View key={i} className="flex-row" style={{ flex: 1, gap: 12 }}>
+            {linha.map((nome) => {
+              const itens = refeicoes[nome] ?? [];
+              const kcal = itens.reduce((soma, item) => soma + item.kcal, 0);
+              const Icone = ICONES[nome];
+              return (
+                <TouchableOpacity
+                  key={nome}
+                  activeOpacity={0.8}
+                  style={{ flex: 1, minHeight: 0 }}
+                  onPress={() => navigation.navigate('DetalheRefeicao', { refeicao: nome })}
+                >
+                  <Card highlight={kcal > 0} className="justify-between p-4 rounded-[24px]" style={{ flex: 1 }}>
+                    <View className="flex-row items-center justify-between">
+                      <View
+                        className="items-center justify-center"
+                        style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: 'rgba(0,209,255,0.10)', borderWidth: 1, borderColor: 'rgba(0,209,255,0.25)' }}
+                      >
+                        <Icone color={colors.cyan} size={20} strokeWidth={2} />
+                      </View>
+                      <IconButton size={36} onPress={() => navigation.navigate('PesquisaAlimentos', { refeicao: nome })}>
+                        <Plus color={colors.cyan} size={18} strokeWidth={2.6} />
+                      </IconButton>
+                    </View>
+                    <View>
+                      <Text className="text-white font-bold text-base" numberOfLines={1}>{nome}</Text>
+                      <View className="flex-row items-end mt-1">
+                        <Text className="text-white font-extrabold" style={{ fontSize: 26, lineHeight: 30, letterSpacing: -0.5 }}>{kcal}</Text>
+                        <Text className="text-muted font-bold text-xs mb-1 ml-1">kcal</Text>
+                      </View>
+                      <Text className="text-muted text-xs mt-0.5">
+                        {itens.length === 0 ? 'Nada registrado' : `${itens.length} ${itens.length === 1 ? 'alimento' : 'alimentos'}`}
+                      </Text>
+                    </View>
+                  </Card>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-             <Plus color="#FFFFFF" size={28} strokeWidth={1.5} />
-          </TouchableOpacity>
-        </View>
-
-        <View className="mb-8 border-b border-[#2A2E39] pb-4 flex-row justify-between items-center">
-          <View>
-            <Text className="text-white font-bold text-xl mb-1">• Jantar</Text>
-            <Text className="text-gray-400 text-sm font-medium">Inhame, Charque</Text>
-            <Text className="text-white font-bold text-sm mt-1">450 kcal</Text>
-          </View>
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-             <Plus color="#FFFFFF" size={28} strokeWidth={1.5} />
-          </TouchableOpacity>
-        </View>
-
-        <View className="flex-row justify-between items-center mt-4">
-          <Text className="text-white font-bold text-lg">Total consumido:</Text>
-          <Text className="text-white font-bold text-lg">1350 kcal</Text>
-        </View>
-
-      </ScrollView>
-    </SafeAreaView>
+        ))}
+      </View>
+    </Screen>
   );
 }
