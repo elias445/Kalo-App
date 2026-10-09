@@ -100,7 +100,7 @@ Kalo-App/
 └── docs/                            # Documentação do projeto
     ├── diagrama-casos-de-uso.puml   # Código fonte PlantUML
     └── diagrama-casos-de-uso.png    # Imagem do diagrama de casos de uso
-
+```
 ---
 
 ## Identidade Visual
