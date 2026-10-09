@@ -1,115 +1,175 @@
-# ⚡ Kalo - App de Fitness e Nutrição
+# Kalo - Treino, Dieta e Competição em um só app
 
-![Status do Projeto](https://img.shields.io/badge/Status-Primeira%20Entrega-green)
+![Status do Projeto](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)
 ![React Native](https://img.shields.io/badge/React_Native-20232A?logo=react&logoColor=61DAFB)
 ![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/NativeWind_v4-38B2AC?logo=tailwind-css&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)
 
-O **Kalo** é um aplicativo mobile premium projetado para revolucionar o acompanhamento de saúde, dietas e treinos. Com uma interface moderna, focada em performance e usabilidade, o app permite aos usuários registrarem suas refeições diárias, acompanharem metas de macronutrientes, visualizarem o progresso de peso corporal e manterem um calendário de frequência de treinos. 
+O **Kalo** é um aplicativo mobile que reúne em um só lugar o que normalmente exige vários apps de fitness: **plano de treino**, **contador de calorias e macros**, **acompanhamento de evolução** e **competição entre amigos**.
 
-O design do projeto adota a identidade visual **"Azul Elétrico"**, utilizando um tema escuro de alto contraste que transmite foco e tecnologia.
+A ideia é que o usuário informe seus dados e seu objetivo, receba um plano personalizado e acompanhe tudo (treinos, alimentação, peso) em uma interface moderna, em tema escuro com a identidade visual "Azul Elétrico". Na aba **Comunidade**, ele pode desafiar amigos e disputar um ranking.
 
----
-
-## ✨ Funcionalidades (Escopo da 1ª Entrega)
-
-* **🔐 Autenticação e Onboarding:** Telas de entrada (`LoginScreen`) e configuração inicial de perfil com definição de medidas corporais e objetivos (`OnboardingScreen`).
-* **📊 Dashboard (Home):** Resumo visual rápido de calorias consumidas, metas de macronutrientes e atalho direto para o treino planejado do dia.
-* **🍽️ Plano Diário e Pesquisa:** Fluxo completo para visualizar refeições do dia (Café, Almoço, Jantar), com sistema de busca de alimentos e seleção de gramas (`DiarioScreen` e `PesquisaAlimentosScreen`).
-* **👤 Perfil e Evolução:** Área do usuário contendo um gráfico de acompanhamento de peso corporal e um calendário visual detalhando a frequência de treinos (`PerfilScreen`).
-* **🏋️ Treino:** Cronograma semanal com edição/adição de exercícios (`EditarExercicioScreen`), tela do treino do dia com checklist (`TreinoDoDiaScreen`) e plano gerado após o onboarding com metas de calorias e macros (`PlanoGeradoScreen`).
-* **🍎 Refeições:** Detalhe de cada refeição com remoção de itens (`DetalheRefeicaoScreen`) e escolha da refeição ao adicionar um alimento.
-* **⚖️ Conta e Perfil:** Cadastro (`CadastroScreen`), edição de perfil (`EditarPerfilScreen`) e registro de peso que atualiza o gráfico (`RegistrarPesoScreen`).
-* **🧭 Navegação Avançada:** Sistema de abas inferiores (Home Bar) integrado com pilhas de navegação (Stack Navigation) para transições fluidas.
+> **Estado atual:** o app é um protótipo funcional de front-end. Todas as telas e fluxos funcionam, mas os dados ficam apenas em memória e parte deles é de exemplo (veja [Limitações](#limitações-do-protótipo)). O backend está nos planos futuros.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## Funcionalidades
 
-O projeto foi construído utilizando as seguintes ferramentas modernas do ecossistema mobile:
+### Conta e onboarding
+* **Login e cadastro**, com validação de campos e medidor de força da senha.
+* **Onboarding** com dados biométricos (sexo, idade, altura, peso) e escolha do objetivo.
+* **Plano gerado** com meta diária de calorias e macronutrientes (equação de Mifflin-St Jeor com fator de atividade e ajuste pelo objetivo) e a divisão semanal de treino.
 
-* **Framework Base:** React Native
-* **Plataforma/Build:** Expo (SDK 57)
-* **Estilização:** NativeWind v4 (Tailwind CSS)
-* **Roteamento:** React Navigation v6 (Bottom Tabs & Native Stack)
+### Início
+* Anel de calorias consumidas x meta, com o quanto ainda resta no dia.
+* Macros (carboidratos, proteínas e gorduras) com barras de progresso.
+* Prévia do treino do dia, com tempo e gasto estimados, ou aviso de dia de descanso.
+
+### Treino
+* **Cronograma semanal** com seletor de dias, divisão do dia e exercícios numerados com séries e repetições.
+* **Plano padrão:** treinos de segunda a sexta e descanso no sábado e no domingo.
+* **Substituição de exercícios** por recomendados do mesmo grupo muscular, adição de novos exercícios e remoção.
+* Tela de treino do dia com checklist e progresso (código pronto, ainda sem ponto de entrada na navegação).
+
+### Dieta
+* Seis refeições (café da manhã, lanche da manhã, almoço, lanche da tarde, jantar e ceia) em uma grade única, sem rolagem.
+* Resumo do dia com anel de progresso, total consumido e calorias restantes.
+* Detalhe de cada refeição, com remoção de alimentos.
+* Busca de alimentos com quantidade em gramas, cálculo de kcal da porção e adição direta na refeição escolhida.
+
+### Comunidade
+* **Desafio ativo** com progresso em dias e sua posição no ranking.
+* **Ranking** com pódio dos três primeiros, lista completa e regras de pontuação.
+* **Amigos** e **atividade** (feed com curtidas).
+* **Adicionar amigo** por código de convite (compartilhável) ou por @usuário, com sugestões.
+* **Novo desafio:** nome, duração, regras de pontuação e participantes.
+
+### Perfil e evolução
+* Gráfico de peso corporal em área, com registro de novos pesos.
+* Estatísticas rápidas (treinos, média diária e variação de peso).
+* Calendário de frequência de treino, com consistência e sequência de dias.
+* Edição de perfil (nome, sexo, idade, altura e objetivo).
+
+---
+
+## Tecnologias Utilizadas
+
+* **Framework:** React Native 0.86
+* **Plataforma e build:** Expo (SDK 57)
 * **Linguagem:** TypeScript
+* **Estilização:** NativeWind v4 (Tailwind CSS)
+* **Navegação:** React Navigation 7 (Bottom Tabs e Native Stack)
+* **Gráficos e ícones:** React Native Gifted Charts, React Native SVG e Lucide React Native
+* **Gradientes:** Expo Linear Gradient
 
 ---
 
-## 🎨 Planejamento Visual e Funcional
+## Estrutura do Projeto
+
+```text
+App.tsx                      # Navegação (stack + abas) e providers
+src/
+├── components/              # Design system: Screen, Card, HeroCard, botões, campos, TabBar, anel de progresso...
+├── context/AppContext.tsx   # Estado global: perfil, peso, refeições, plano de treino, amigos e desafio
+├── data/                    # Dados de exemplo e catálogos (treino, alimentos, objetivos, comunidade)
+├── screens/                 # Telas do app
+├── utils/metas.ts           # Cálculo de calorias e macros
+└── theme.ts                 # Tokens de cor, gradientes e sombras
+```
+
+---
+
+## Identidade Visual
+
+Tema escuro "Azul Elétrico", com cartões em gradiente, rótulos em caixa-alta e destaques em ciano.
+
+| Token | Cor |
+|---|---|
+| Fundo | `#07090E` |
+| Cartões | `#0E131B` |
+| Ciano (destaque) | `#00D1FF` |
+| Azul (gradiente) | `#0A5CFF` |
+| Texto secundário | `#8B94A7` |
+
+As cores ficam em `tailwind.config.js` e `src/theme.ts`.
+
+---
+
+## Planejamento Visual e Funcional
 
 A interface foi baseada em protótipos de baixa e alta fidelidade focados em experiência do usuário (UX) e interface (UI) no padrão Dark Mode.
 
-### Protótipo de Alta Fidelidade (Figma)
-Clique no botão abaixo para acessar o protótipo interativo do design:
+### Protótipo (Figma)
 
 [![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/proto/TWBbVmefg299gUVtsBPupZ/Kalo?node-id=1-2&p=f&t=S49Xn38qj1lSBEF2-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1)
 
-### Diagramas e Arquitetura
+### Diagrama de Caso de Uso
 
-**Diagrama de Caso de Uso**  
-*Interações dos atores (usuário) com as funcionalidades centrais do sistema.*  
-![Diagrama de Caso de Uso](./docs/diagrama-casos-de-uso.png) 
+Interações do usuário com as funcionalidades centrais do sistema.
 
+![Diagrama de Caso de Uso](./docs/diagrama-casos-de-uso.png)
 
 ---
 
-## 💻 Pré-requisitos
+## Pré-requisitos
 
-Antes de começar, você precisará ter instalado em sua máquina:
-
-* [Node.js](https://nodejs.org/) (Versão LTS recomendada)
+* [Node.js](https://nodejs.org/) (versão LTS recomendada)
 * [Git](https://git-scm.com/)
-* App **Expo Go** instalado no seu smartphone (opcional, para testes em dispositivo físico).
+* App **Expo Go** no celular (opcional, para testar em dispositivo físico) ou um emulador Android/iOS.
 
 ---
 
-## 🛠️ Instalando e Rodando o Projeto
+## Instalando e Rodando o Projeto
 
-**1. Clone este repositório e acesse a pasta do projeto:**
+**1. Clone o repositório e entre na pasta do projeto:**
+
 ```bash
-git clone [https://github.com/elias445/Kalo-App.git](https://github.com/elias445/Kalo-App.git)
-cd app-kalo
-````
-
-**2. Instale as dependências essenciais:**
-
-  
-
-Bash
-
+git clone https://github.com/elias445/Kalo-App.git
+cd Kalo-App
 ```
+
+**2. Instale as dependências:**
+
+```bash
 npm install
 ```
 
-**3. Inicie o servidor de desenvolvimento do Expo (limpando o cache):**
+**3. Inicie o servidor de desenvolvimento (limpando o cache):**
 
-  
-
-Bash
-
-```
+```bash
 npx expo start -c
 ```
 
-- **Para testar no celular:** Escaneie o QR Code gerado no terminal usando o app Expo Go (Android) ou o aplicativo de Câmera (iOS).
-    
-      
-    
-- **Para testar no emulador:** Pressione `a` no terminal para abrir no Android Studio ou `i` para abrir no simulador do iOS.
-    
-      
-    
+* **No celular:** escaneie o QR Code com o app Expo Go (Android) ou com a câmera (iOS).
+* **No emulador:** pressione `a` no terminal para o Android ou `i` para o simulador do iOS.
 
-## 🤝 Equipe de Desenvolvimento
+**Login de teste:** use o e-mail `teste` e a senha `123`, ou crie uma conta pela tela de cadastro.
 
-Projeto desenvolvido por:
+---
 
-  
+## Limitações do Protótipo
 
-- [Elias Manuel Fonseca Moreira](https://github.com/elias445?utm_source=gemini) - Desenvolvedor
-    
-      
-    
-- [João Vitor Farias de Amorim](https://github.com/joaovitor-9?utm_source=gemini) - Desenvolvedor
+* **Sem backend:** os dados ficam em memória e voltam ao padrão quando o app reinicia.
+* **Alimentos:** a tabela de 14 alimentos e seus valores de kcal por 100 g foi escrita manualmente e é aproximada. O app ainda não guarda macros por alimento, então os macros da tela inicial são estimados proporcionalmente às calorias registradas.
+* **Comunidade:** pontos, amigos e atividades são dados de exemplo. A pontuação ainda não é calculada a partir dos treinos e da dieta reais, e os convites não são aceitos por ninguém.
+* **Calendário e estatísticas do perfil:** o histórico de treinos e os números de treinos e média diária são simulados.
+* **Metas nutricionais:** são estimativas gerais e não substituem a orientação de um profissional de saúde.
+
+---
+
+## Próximos Passos
+
+* Backend com autenticação, amigos, desafios e cálculo do ranking.
+* Pontuação automática da comunidade a partir dos treinos concluídos e das metas de calorias.
+* Base de alimentos real em português (por exemplo, a TACO) com macros por alimento.
+* Catálogo de exercícios com imagens e instruções.
+* Persistência dos dados do usuário e notificações.
+* Atualizar o diagrama de casos de uso com a aba Comunidade.
+
+---
+
+## Equipe de Desenvolvimento
+
+* [Elias Manuel Fonseca Moreira](https://github.com/elias445) - Desenvolvedor
+* [João Vitor Farias de Amorim](https://github.com/joaovitor-9) - Desenvolvedor
