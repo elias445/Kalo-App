@@ -10,11 +10,6 @@ O **Kalo** é um aplicativo mobile que reúne em um só lugar o que normalmente 
 
 A ideia é que o usuário informe seus dados e seu objetivo, receba um plano personalizado e acompanhe tudo (treinos, alimentação, peso) em uma interface moderna, em tema escuro com a identidade visual "Azul Elétrico". Na aba **Comunidade**, ele pode desafiar amigos e disputar um ranking.
 
-
-- "devices.json": contains information about devices that have recently opened this project. This is used to populate the "Development sessions" list in your development builds.
-- "settings.json": contains the server configuration that is used to serve the application manifest.
-- "dev/logs/": contains structured JSONL event logs from CLI commands (e.g. start.log, export.log). These are truncated on each run.
-
 ## Funcionalidades
 
 ### Conta e onboarding
@@ -56,28 +51,55 @@ A ideia é que o usuário informe seus dados e seu objetivo, receba um plano per
 
 ## Tecnologias Utilizadas
 
-* **Framework:** React Native 0.86
-* **Plataforma e build:** Expo (SDK 57)
-* **Linguagem:** TypeScript
-* **Estilização:** NativeWind v4 (Tailwind CSS)
-* **Navegação:** React Navigation 7 (Bottom Tabs e Native Stack)
-* **Gráficos e ícones:** React Native Gifted Charts, React Native SVG e Lucide React Native
-* **Gradientes:** Expo Linear Gradient
+**Mobile (Front-end)**
+- **Framework:** React Native 0.86
+- **Plataforma e build:** Expo (SDK 57)
+- **Linguagem:** TypeScript
+- **Estilização:** NativeWind v4 (Tailwind CSS)
+- **Navegação:** React Navigation 7 (Bottom Tabs e Native Stack)
+- **Gráficos e ícones:** React Native Gifted Charts, React Native SVG e Lucide React Native
+- **Gradientes:** Expo Linear Gradient
+
+**Back-end (API)**
+- **Linguagem:** Python 3
+- **Framework:** FastAPI
+- **Banco de Dados:** PostgreSQL (Local)
+- **ORM:** SQLAlchemy (Mapeamento de dados)
+- **Validação:** Pydantic (Schemas)
+- **Segurança:** Passlib e Bcrypt (Criptografia de senhas)
+- **Servidor:** Uvicorn
 
 ---
 
 ## Estrutura do Projeto
 
+A arquitetura do projeto é dividida em duas aplicações independentes: o aplicativo móvel (`Mobile/`) e o servidor da API (`Back-end/`), além da documentação do sistema (`docs/`).
+
 ```text
-App.tsx                      # Navegação (stack + abas) e providers
-src/
-├── components/              # Design system: Screen, Card, HeroCard, botões, campos, TabBar, anel de progresso...
-├── context/AppContext.tsx   # Estado global: perfil, peso, refeições, plano de treino, amigos e desafio
-├── data/                    # Dados de exemplo e catálogos (treino, alimentos, objetivos, comunidade)
-├── screens/                 # Telas do app
-├── utils/metas.ts           # Cálculo de calorias e macros
-└── theme.ts                 # Tokens de cor, gradientes e sombras
-```
+Kalo-App/
+├── Back-end/                        # API RESTful e Banco de Dados
+│   ├── app/
+│   │   ├── main.py                  # Ponto de entrada e inicialização do servidor
+│   │   ├── database.py              # Configuração da conexão com o PostgreSQL
+│   │   ├── models/                  # Tabelas do banco de dados (SQLAlchemy)
+│   │   ├── schemas/                 # Validação de dados (Pydantic)
+│   │   ├── routers/                 # Controladores e rotas da API (Endpoints)
+│   │   └── use_cases/               # Lógica e regras de negócio centralizadas
+│   └── requirements.txt             # Dependências do Python
+│
+├── Mobile/                          # Aplicativo Mobile
+│   ├── App.tsx                      # Navegação (stack + abas) e providers
+│   └── src/
+│       ├── components/              # Design system: Screen, Card, botões, anel de progresso...
+│       ├── context/AppContext.tsx   # Estado global: perfil, peso, refeições, treinos
+│       ├── data/                    # Dados de exemplo e catálogos 
+│       ├── screens/                 # Telas do app
+│       ├── utils/metas.ts           # Lógica do front (Cálculo de calorias e macros)
+│       └── theme.ts                 # Tokens de cor, gradientes e sombras
+│
+└── docs/                            # Documentação do projeto
+    ├── diagrama-casos-de-uso.puml   # Código fonte PlantUML
+    └── diagrama-casos-de-uso.png    # Imagem do diagrama de casos de uso
 
 ---
 
