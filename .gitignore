@@ -1,5 +1,7 @@
 Back-end/venv/
 Back-end/__pycache__/
 .env
-**/__pycache__/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
 *.pyc
