@@ -9,14 +9,17 @@ import { OutlineButton } from '../components/Buttons';
 import { ICONES_REFEICAO } from '../components/iconesRefeicao';
 import { BackButton, IconButton, IconTile, InfoChip, MiniTile, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { useRefeicoes } from '../context/RefeicoesContext';
 import { colors } from '../theme';
 
 export default function DetalheRefeicaoScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const refeicao: string = route.params?.refeicao ?? 'Refeição';
-  const { refeicoes, removerAlimento, metas } = useApp();
   const Icone = ICONES_REFEICAO[refeicao] ?? UtensilsCrossed;
+
+  const { metas } = useApp();
+  const { refeicoes, removerAlimento } = useRefeicoes();
 
   const itens = refeicoes[refeicao] ?? [];
   const total = itens.reduce((soma, item) => soma + item.kcal, 0);

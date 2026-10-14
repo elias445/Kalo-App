@@ -10,6 +10,7 @@ import RingProgress from '../components/RingProgress';
 import { Badge, IconButton, SectionLabel } from '../components/UI';
 import { REFEICOES, useApp } from '../context/AppContext';
 import { colors } from '../theme';
+import { useRefeicoes } from '../context/RefeicoesContext';
 
 const ICONES: Record<string, LucideIcon> = {
   'Café da manhã': Coffee,
@@ -24,7 +25,8 @@ const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 export default function ResumoRefeicoesScreen() {
   const navigation = useNavigation<any>();
-  const { refeicoes, metas, totalConsumido } = useApp();
+  const { metas } = useApp(); 
+  const { refeicoes, totalConsumido } = useRefeicoes();
 
   const progresso = totalConsumido / metas.calorias;
   const restantes = metas.calorias - totalConsumido;

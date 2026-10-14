@@ -6,7 +6,7 @@ import Screen from '../components/Screen';
 import AlimentoRow, { useAdicionado } from '../components/AlimentoRow';
 import { BackButton, Badge, MiniTile, SectionLabel } from '../components/UI';
 import { ICONES_REFEICAO } from '../components/iconesRefeicao';
-import { useApp } from '../context/AppContext';
+import { useRefeicoes } from '../context/RefeicoesContext';
 import { ALIMENTOS, calcularKcal } from '../data/alimentos';
 import { colors } from '../theme';
 
@@ -16,7 +16,8 @@ export default function PesquisaAlimentosScreen() {
   const route = useRoute<any>();
   const refeicaoDestino: string = route.params.refeicao;
   const Icone = ICONES_REFEICAO[refeicaoDestino];
-  const { adicionarAlimento } = useApp();
+  
+  const { adicionarAlimento } = useRefeicoes();
 
   const [busca, setBusca] = useState('');
   const [gramas, setGramas] = useState<Record<string, string>>({});

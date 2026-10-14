@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from datetime import datetime
 from typing import Optional
 
@@ -7,11 +7,11 @@ class HistoricoMedidasBase(BaseModel):
     percentual_gordura: Optional[float] = None
 
 class HistoricoMedidasCreate(HistoricoMedidasBase):
-    usuario_id: str
+    usuario_id: UUID4
 
 class HistoricoMedidasResponse(HistoricoMedidasBase):
-    id: str
-    usuario_id: str
+    id: UUID4
+    usuario_id: UUID4
     data_registro: datetime
 
     class Config:

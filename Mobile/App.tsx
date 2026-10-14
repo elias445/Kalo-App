@@ -27,6 +27,7 @@ import RegistrarPesoScreen from './src/screens/RegistrarPesoScreen';
 import CronogramaTreinoScreen from './src/screens/CronogramaTreinoScreen';
 import EditarExercicioScreen from './src/screens/EditarExercicioScreen';
 import TreinoDoDiaScreen from './src/screens/TreinoDoDiaScreen';
+import { RefeicoesProvider } from './src/context/RefeicoesContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -76,6 +77,7 @@ function AppTabs() {
 export default function App() {
   return (
     <AppProvider>
+      <RefeicoesProvider>
       <StatusBar style="light" />
       <NavigationContainer theme={temaKalo}>
         <Stack.Navigator screenOptions={opcoesStack} initialRouteName="Login">
@@ -92,6 +94,7 @@ export default function App() {
           <Stack.Screen name="NovoDesafio" component={NovoDesafioScreen} />
         </Stack.Navigator>
       </NavigationContainer>
+      </RefeicoesProvider>
     </AppProvider>
   );
 }
