@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 from datetime import datetime
 import uuid
@@ -7,8 +8,8 @@ import uuid
 class HistoricoMedidasModel(Base):
     __tablename__ = "historico_medidas"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    usuario_id = Column(String, ForeignKey("usuarios.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False)
     data_registro = Column(DateTime, default=datetime.utcnow)
     peso_kg = Column(Float, nullable=False)
     percentual_gordura = Column(Float, nullable=True)
