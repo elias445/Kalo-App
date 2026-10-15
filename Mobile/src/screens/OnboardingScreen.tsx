@@ -10,6 +10,8 @@ import { BackButton, Badge, Chip, ProgressBar } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { OBJETIVOS, SEXOS } from '../data/perfil';
 import { colors } from '../theme';
+import { apiFetch } from '../services/api';
+
 
 export default function OnboardingScreen() {
   const navigation = useNavigation();
@@ -22,15 +24,35 @@ export default function OnboardingScreen() {
   const [objetivo, setObjetivo] = useState(perfil.objetivo);
   const [sheetAberto, setSheetAberto] = useState(false);
 
-  const gerarPlano = () => {
+  const gerarPlano = async () => {
     const pesoNumero = parseFloat(peso.replace(',', '.'));
+    
     if (!Number(idade) || !Number(altura) || !pesoNumero || !objetivo) {
       Alert.alert('Dados incompletos', 'Preencha idade, altura, peso e objetivo para gerar seu plano.');
       return;
     }
-    atualizarPerfil({ sexo, idade, altura, objetivo });
-    if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
-    navigation.navigate('PlanoGerado' as never);
+
+    try {
+      await apiFetch('/usuarios/onboarding', {
+        method: 'PUT',
+        body: JSON.stringify({
+          sexo: sexo,
+          idade: Number(idade),
+          altura: Number(altura),
+          peso_atual: pesoNumero,
+          objetivo: objetivo
+        })
+      });
+
+      atualizarPerfil({ sexo, idade, altura, objetivo });
+      if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
+      
+      navigation.navigate('PlanoGerado' as never);
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível salvar os dados no servidor.');
+    }
   };
 
   return (

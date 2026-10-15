@@ -21,3 +21,10 @@ class UsuarioResponse(UsuarioBase):
 class UsuarioLogin(BaseModel):
     email: EmailStr
     senha: str
+
+class UsuarioOnboarding(BaseModel):
+    sexo: str
+    idade: int
+    altura: float
+    peso_atual: float
+    objetivo: str

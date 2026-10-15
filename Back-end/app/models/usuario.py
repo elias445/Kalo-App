@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Integer, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
@@ -11,6 +11,10 @@ class UsuarioModel(Base):
     nome = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     senha_hash = Column(String, nullable=False)
+    sexo = Column(String, nullable=True)
+    idade = Column(Integer, nullable=True)
+    altura = Column(Float, nullable=True)  # Em cm
+    peso_atual = Column(Float, nullable=True) # Em kg
     objetivo = Column(String, nullable=True)
     nivel_experiencia = Column(String, nullable=True)
 
