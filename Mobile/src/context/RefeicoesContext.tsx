@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { apiFetch } from '../services/api';
 import { ALIMENTOS, calcularKcal } from '../data/alimentos';
+import { useApp } from './AppContext'; 
 
 export type ItemRefeicao = { id: string | number; nome: string; gramas: number; kcal: number };
 
@@ -14,29 +15,22 @@ type RefeicoesState = {
 const RefeicoesContext = createContext<RefeicoesState | null>(null);
 
 export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
+  const { usuarioId } = useApp(); 
+
   const [refeicoes, setRefeicoes] = useState<Record<string, ItemRefeicao[]>>({
-    'Café da manhã': [],
-    'Lanche da manhã': [],
-    'Almoço': [],
-    'Lanche da tarde': [],
-    'Jantar': [],
-    'Ceia': [],
+    'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
   });
 
   const totalConsumido = Object.values(refeicoes).flat().reduce((soma, item) => soma + item.kcal, 0);
-  const usuarioIdFixo = "a3f9c3f5-ed2f-451e-a1b6-74ed71a334bf";
 
   const carregarRefeicoes = useCallback(async () => {
+    if (!usuarioId) return; 
+
     try {
-      const dadosBanco = await apiFetch(`/refeicoes/usuario/${usuarioIdFixo}`); 
+      const dadosBanco = await apiFetch(`/refeicoes/usuario/${usuarioId}`); 
       
       const refeicoesAgrupadas: Record<string, ItemRefeicao[]> = {
-        'Café da manhã': [],
-        'Lanche da manhã': [],
-        'Almoço': [],
-        'Lanche da tarde': [],
-        'Jantar': [],
-        'Ceia': [],
+        'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
       };
 
       dadosBanco.forEach((item: any) => {
@@ -54,27 +48,23 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Erro ao carregar refeições do banco:", error);
     }
-  }, []);
-
+  }, [usuarioId]); 
 
   useEffect(() => {
     carregarRefeicoes();
   }, [carregarRefeicoes]);
 
-
   const adicionarAlimento = useCallback(async (refeicao: string, nome: string, gramas: number) => {
+    if (!usuarioId) return; 
+
     const alimento = ALIMENTOS.find((a) => a.nome === nome);
     const kcal = calcularKcal(alimento?.kcal100 ?? 100, gramas);
     
-
-    const usuarioIdFixo = "a3f9c3f5-ed2f-451e-a1b6-74ed71a334bf"; 
-
     try {
-      
       const response = await apiFetch('/refeicoes/', {
         method: 'POST',
         body: JSON.stringify({
-          usuario_id: usuarioIdFixo,
+          usuario_id: usuarioId, 
           data_consumo: new Date().toISOString().split('T')[0],
           tipo_refeicao: refeicao,
           nome_alimento: nome,
@@ -86,7 +76,6 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
         })
       });
 
-      
       setRefeicoes((atual) => ({
         ...atual,
         [refeicao]: [
@@ -97,10 +86,9 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Erro ao salvar refeição na API:", error);
     }
-  }, []);
+  }, [usuarioId]);
 
   const removerAlimento = useCallback(async (refeicao: string, id: string | number) => {
-    
     try {
       await apiFetch(`/refeicoes/${id}`, { method: 'DELETE' });
       setRefeicoes((atual) => ({ 

@@ -6,6 +6,7 @@ import Screen from '../components/Screen';
 import Field from '../components/Field';
 import { GradientButton } from '../components/Buttons';
 import { colors } from '../theme';
+import { useApp } from '../context/AppContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -13,11 +14,45 @@ export default function LoginScreen() {
   const [verSenha, setVerSenha] = useState(false);
   const navigation = useNavigation();
 
-  const handleLogin = () => {
-    if (email.toLowerCase().trim() === 'teste' && senha === '123') {
-      navigation.navigate('Onboarding' as never);
-    } else {
-      Alert.alert('Acesso negado', 'Email ou senha incorretos. Tente novamente.');
+  const { iniciarSessao } = useApp();
+
+  const handleLogin = async () => {
+    if (!email.trim() || !senha) {
+      Alert.alert('Campos vazios', 'Preencha o e-mail e a senha.');
+      return;
+    }
+    
+    if (!email.includes('@') || !email.includes('.')) {
+      Alert.alert('E-mail inválido', 'Por favor, digite um e-mail em formato válido.');
+      return;
+    }
+
+    try {
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
+      const response = await fetch(`${API_URL}/usuarios/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: email.toLowerCase().trim(), 
+          senha: senha 
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await iniciarSessao(data.usuario, data.token);
+        navigation.navigate('Onboarding' as never);
+      } else {
+        const mensagemErro = Array.isArray(data.detail) 
+          ? 'Formato de dados inválido. Verifique o e-mail.' 
+          : (data.detail || 'Email ou senha incorretos.');
+          
+        Alert.alert('Acesso negado', mensagemErro);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor.');
     }
   };
 

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { ALIMENTOS, calcularKcal } from '../data/alimentos';
 import { PLANO_PADRAO, DiaTreino, Exercicio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
@@ -11,6 +12,10 @@ export type ItemRefeicao = { id: number; nome: string; gramas: number; kcal: num
 export const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'];
 
 type AppState = {
+  usuarioId: string | null; 
+  token: string | null; 
+  iniciarSessao: (usuario: any, novoToken: string) => Promise<void>; 
+  encerrarSessao: () => Promise<void>; 
   perfil: Perfil;
   atualizarPerfil: (dados: Partial<Perfil>) => void;
   pesos: RegistroPeso[];
@@ -38,8 +43,11 @@ const rotuloHoje = () => {
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
   const [perfil, setPerfil] = useState<Perfil>({
-    nome: 'João Elias',
+    nome: 'Visitante',
     sexo: 'Masculino',
     idade: '24',
     altura: '178',
@@ -55,105 +63,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   const [refeicoes, setRefeicoes] = useState<Record<string, ItemRefeicao[]>>({
-    'Café da manhã': [
-      { id: 1, nome: 'Pão francês', gramas: 50, kcal: 150 },
-      { id: 2, nome: 'Ovos mexidos', gramas: 100, kcal: 150 },
-      { id: 3, nome: 'Café puro', gramas: 200, kcal: 50 },
-    ],
-    'Lanche da manhã': [],
-    'Almoço': [
-      { id: 4, nome: 'Arroz', gramas: 150, kcal: 195 },
-      { id: 5, nome: 'Feijão', gramas: 100, kcal: 75 },
-      { id: 6, nome: 'Frango grelhado', gramas: 100, kcal: 165 },
-      { id: 7, nome: 'Salada', gramas: 100, kcal: 115 },
-    ],
-    'Lanche da tarde': [],
-    'Jantar': [
-      { id: 8, nome: 'Inhame', gramas: 200, kcal: 230 },
-      { id: 9, nome: 'Charque', gramas: 100, kcal: 220 },
-    ],
-    'Ceia': [],
+    'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
   });
-
   const [plano, setPlano] = useState<Record<string, DiaTreino>>(PLANO_PADRAO);
   const [amigos, setAmigos] = useState<Amigo[]>(AMIGOS_INICIAIS);
   const [desafio, setDesafio] = useState<Desafio>(DESAFIO_INICIAL);
 
-  const pesoAtual = pesos[pesos.length - 1].value;
 
-  const metas = useMemo(
-    () =>
-      calcularMetas({
-        peso: pesoAtual,
-        altura: Number(perfil.altura),
-        idade: Number(perfil.idade),
-        sexo: perfil.sexo,
-        objetivo: perfil.objetivo,
-      }),
-    [pesoAtual, perfil]
-  );
+  useEffect(() => {
+    async function carregarSessao() {
+      const tokenSalvo = await AsyncStorage.getItem('@kalo_token');
+      const idSalvo = await AsyncStorage.getItem('@kalo_id');
+      const perfilSalvo = await AsyncStorage.getItem('@kalo_perfil');
+
+      if (tokenSalvo && idSalvo && perfilSalvo) {
+        setToken(tokenSalvo);
+        setUsuarioId(idSalvo);
+        setPerfil(JSON.parse(perfilSalvo));
+      }
+    }
+    carregarSessao();
+  }, []);
+
+  
+  const iniciarSessao = async (usuario: any, novoToken: string) => {
+    setToken(novoToken);
+    setUsuarioId(usuario.id);
+    
+    const novoPerfil = { ...perfil, nome: usuario.nome, objetivo: usuario.objetivo || perfil.objetivo };
+    setPerfil(novoPerfil);
+
+    await AsyncStorage.setItem('@kalo_token', novoToken);
+    await AsyncStorage.setItem('@kalo_id', usuario.id);
+    await AsyncStorage.setItem('@kalo_perfil', JSON.stringify(novoPerfil));
+  };
+
+  const encerrarSessao = async () => {
+    setToken(null);
+    setUsuarioId(null);
+    await AsyncStorage.removeItem('@kalo_token');
+    await AsyncStorage.removeItem('@kalo_id');
+    await AsyncStorage.removeItem('@kalo_perfil');
+  };
+
+  const pesoAtual = pesos[pesos.length - 1]?.value || 0;
+
+  const metas = useMemo(() => calcularMetas({
+    peso: pesoAtual, altura: Number(perfil.altura), idade: Number(perfil.idade), sexo: perfil.sexo, objetivo: perfil.objetivo,
+  }), [pesoAtual, perfil]);
 
   const totalConsumido = Object.values(refeicoes).flat().reduce((soma, item) => soma + item.kcal, 0);
 
   const atualizarPerfil = useCallback((dados: Partial<Perfil>) => setPerfil((atual) => ({ ...atual, ...dados })), []);
-
-  const registrarPeso = useCallback((valor: number) => {
-    setPesos((atual) => [...atual, { value: valor, label: rotuloHoje() }]);
-  }, []);
-
+  const registrarPeso = useCallback((valor: number) => setPesos((atual) => [...atual, { value: valor, label: rotuloHoje() }]), []);
   const adicionarAlimento = useCallback((refeicao: string, nome: string, gramas: number) => {
     const alimento = ALIMENTOS.find((a) => a.nome === nome);
     const kcal = calcularKcal(alimento?.kcal100 ?? 100, gramas);
     setRefeicoes((atual) => ({
-      ...atual,
-      [refeicao]: [...(atual[refeicao] ?? []), { id: Date.now() + Math.random(), nome, gramas, kcal }],
+      ...atual, [refeicao]: [...(atual[refeicao] ?? []), { id: Date.now() + Math.random(), nome, gramas, kcal }],
     }));
   }, []);
-
-  const removerAlimento = useCallback((refeicao: string, id: number) => {
-    setRefeicoes((atual) => ({ ...atual, [refeicao]: (atual[refeicao] ?? []).filter((item) => item.id !== id) }));
-  }, []);
-
+  const removerAlimento = useCallback((refeicao: string, id: number) => setRefeicoes((atual) => ({ ...atual, [refeicao]: (atual[refeicao] ?? []).filter((item) => item.id !== id) })), []);
   const salvarExercicio = useCallback((dia: string, exercicio: Omit<Exercicio, 'id'> & { id?: number }) => {
     setPlano((atual) => {
       const lista = atual[dia].exercicios;
       const novo = { ...exercicio, id: exercicio.id ?? Date.now() };
-      const exercicios = lista.some((e) => e.id === novo.id)
-        ? lista.map((e) => (e.id === novo.id ? novo : e))
-        : [...lista, novo];
+      const exercicios = lista.some((e) => e.id === novo.id) ? lista.map((e) => (e.id === novo.id ? novo : e)) : [...lista, novo];
       return { ...atual, [dia]: { ...atual[dia], exercicios } };
     });
   }, []);
+  const removerExercicio = useCallback((dia: string, id: number) => setPlano((atual) => ({
+    ...atual, [dia]: { ...atual[dia], exercicios: atual[dia].exercicios.filter((e) => e.id !== id) },
+  })), []);
+  const adicionarAmigo = useCallback((nome: string, usuario: string) => setAmigos((atual) => atual.some((a) => a.usuario === usuario) ? atual : [...atual, { id: `${usuario}-${Date.now()}`, nome, usuario, pontos: 0, treinos: 0, sequencia: 0, status: 'pendente' }]), []);
+  const criarDesafio = useCallback((nome: string, duracao: number, participantes: string[]) => setDesafio({ nome, duracao, diaAtual: 1, participantes }), []);
 
-  const removerExercicio = useCallback((dia: string, id: number) => {
-    setPlano((atual) => ({
-      ...atual,
-      [dia]: { ...atual[dia], exercicios: atual[dia].exercicios.filter((e) => e.id !== id) },
-    }));
-  }, []);
-
-  // Convite enviado: o amigo fica pendente até aceitar (no protótipo não há aceite)
-  const adicionarAmigo = useCallback((nome: string, usuario: string) => {
-    setAmigos((atual) =>
-      atual.some((a) => a.usuario === usuario)
-        ? atual
-        : [...atual, { id: `${usuario}-${Date.now()}`, nome, usuario, pontos: 0, treinos: 0, sequencia: 0, status: 'pendente' }]
-    );
-  }, []);
-
-  const criarDesafio = useCallback((nome: string, duracao: number, participantes: string[]) => {
-    setDesafio({ nome, duracao, diaAtual: 1, participantes });
-  }, []);
-
-  const valor = useMemo(
-    () => ({
-      perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas,
-      refeicoes, adicionarAlimento, removerAlimento, totalConsumido,
-      plano, salvarExercicio, removerExercicio,
-      amigos, adicionarAmigo, desafio, criarDesafio,
-    }),
-    [perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, refeicoes, adicionarAlimento, removerAlimento, totalConsumido, plano, salvarExercicio, removerExercicio, amigos, adicionarAmigo, desafio, criarDesafio]
-  );
+  const valor = useMemo(() => ({
+    usuarioId, token, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, refeicoes, adicionarAlimento, removerAlimento, totalConsumido, plano, salvarExercicio, removerExercicio, amigos, adicionarAmigo, desafio, criarDesafio,
+  }), [usuarioId, token, perfil, pesos, pesoAtual, metas, refeicoes, totalConsumido, plano, amigos, desafio, atualizarPerfil, registrarPeso, adicionarAlimento, removerAlimento, salvarExercicio, removerExercicio, adicionarAmigo, criarDesafio]);
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
 }

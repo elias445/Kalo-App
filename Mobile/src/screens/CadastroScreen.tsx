@@ -28,11 +28,11 @@ export default function CadastroScreen() {
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const navigation = useNavigation();
-  const { atualizarPerfil } = useApp();
+  const { iniciarSessao } = useApp();
 
   const forca = senha ? avaliarSenha(senha) : 0;
 
-  const handleCadastro = () => {
+  const handleCadastro = async () => {
     if (!nome.trim() || !email.trim() || !senha) {
       Alert.alert('Campos obrigatórios', 'Preencha todos os campos para continuar.');
       return;
@@ -49,8 +49,32 @@ export default function CadastroScreen() {
       Alert.alert('Senhas diferentes', 'A confirmação de senha não confere.');
       return;
     }
-    atualizarPerfil({ nome: nome.trim() });
-    navigation.navigate('Onboarding' as never);
+
+    try {
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
+      const response = await fetch(`${API_URL}/usuarios/cadastro`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: nome.trim(),
+          email: email.toLowerCase().trim(),
+          senha: senha
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Cadastro de sucesso! Token:", data.token);
+        await iniciarSessao(data.usuario, data.token);
+        navigation.navigate('Onboarding' as never);
+      } else {
+        Alert.alert('Erro no cadastro', data.detail || 'Não foi possível criar a conta.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor.');
+    }
   };
 
   return (
