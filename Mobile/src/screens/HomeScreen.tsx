@@ -7,6 +7,7 @@ import HeroCard from '../components/HeroCard';
 import RingProgress from '../components/RingProgress';
 import { Badge, IconButton, InfoChip, MiniTile, ProgressBar, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { useRefeicoes } from '../context/RefeicoesContext';
 import { diaDeHoje, estimarTreino } from '../data/treino';
 import { colors } from '../theme';
 
@@ -16,7 +17,8 @@ const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'O
 const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 export default function HomeScreen() {
-  const { perfil, metas, totalConsumido, plano } = useApp();
+  const { perfil, metas, plano } = useApp();
+  const { totalConsumido, totaisMacros } = useRefeicoes();
 
   const hoje = new Date();
   const dataTexto = `${SEMANA[hoje.getDay()]}, ${hoje.getDate()} DE ${MESES[hoje.getMonth()]}`;
@@ -25,13 +27,11 @@ export default function HomeScreen() {
   const restantes = metas.calorias - totalConsumido;
   const progresso = totalConsumido / metas.calorias;
 
-  // Macros consumidos estimados de forma proporcional às calorias já registradas
-  const proporcao = Math.min(1, progresso);
   const macros = [
-    { nome: 'Carboidratos', meta: metas.carboidrato, Icone: Wheat },
-    { nome: 'Proteínas', meta: metas.proteina, Icone: Beef },
-    { nome: 'Gorduras', meta: metas.gordura, Icone: Droplet },
-  ].map((m) => ({ ...m, atual: Math.round(m.meta * proporcao) }));
+    { nome: 'Carboidratos', meta: metas.carboidrato, atual: Math.round(totaisMacros.carboidratos), Icone: Wheat },
+    { nome: 'Proteínas', meta: metas.proteina, atual: Math.round(totaisMacros.proteinas), Icone: Beef },
+    { nome: 'Gorduras', meta: metas.gordura, atual: Math.round(totaisMacros.gorduras), Icone: Droplet },
+  ];
 
   const treino = plano[diaDeHoje()];
   const descanso = treino.exercicios.length === 0;
@@ -79,7 +79,7 @@ export default function HomeScreen() {
             <Text className="text-muted text-xs font-bold mt-3" numberOfLines={1}>{m.nome}</Text>
             <Text className="text-white font-extrabold text-xl mt-0.5">{m.atual}<Text className="text-muted text-sm">g</Text></Text>
             <Text className="text-dim text-[11px] mt-0.5 mb-2.5">de {m.meta}g</Text>
-            <ProgressBar progress={m.atual / m.meta} height={4} />
+            <ProgressBar progress={m.meta ? m.atual / m.meta : 0} height={4} />
           </Card>
         ))}
       </View>
