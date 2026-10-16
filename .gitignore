@@ -5,3 +5,10 @@ __pycache__/
 */__pycache__/
 */*/__pycache__/
 *.pyc
+# Mobile (Expo / Node)
+node_modules/
+**/node_modules/
+.expo/
+**/.expo/
+dist/
+web-build/
