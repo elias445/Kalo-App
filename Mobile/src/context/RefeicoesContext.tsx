@@ -1,15 +1,24 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { apiFetch } from '../services/api';
-import { ALIMENTOS, calcularKcal } from '../data/alimentos';
+import { AlimentoBusca, calcularKcal, porcao } from '../data/alimentos';
 import { useApp } from './AppContext'; 
 
-export type ItemRefeicao = { id: string | number; nome: string; gramas: number; kcal: number };
+export type ItemRefeicao = {
+  id: string | number;
+  nome: string;
+  gramas: number;
+  kcal: number;
+  carboidratos: number;
+  proteinas: number;
+  gorduras: number;
+};
 
 type RefeicoesState = {
   refeicoes: Record<string, ItemRefeicao[]>;
-  adicionarAlimento: (refeicao: string, nome: string, gramas: number) => Promise<void>;
+  adicionarAlimento: (refeicao: string, alimento: AlimentoBusca, gramas: number) => Promise<void>;
   removerAlimento: (refeicao: string, id: string | number) => void;
   totalConsumido: number;
+  totaisMacros: { carboidratos: number; proteinas: number; gorduras: number };
 };
 
 const RefeicoesContext = createContext<RefeicoesState | null>(null);
@@ -21,7 +30,13 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
   });
 
-  const totalConsumido = Object.values(refeicoes).flat().reduce((soma, item) => soma + item.kcal, 0);
+  const itens = Object.values(refeicoes).flat();
+  const totalConsumido = itens.reduce((soma, item) => soma + item.kcal, 0);
+  const totaisMacros = {
+    carboidratos: itens.reduce((soma, item) => soma + item.carboidratos, 0),
+    proteinas: itens.reduce((soma, item) => soma + item.proteinas, 0),
+    gorduras: itens.reduce((soma, item) => soma + item.gorduras, 0),
+  };
 
   const carregarRefeicoes = useCallback(async () => {
     if (!usuarioId) return; 
@@ -39,7 +54,10 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
             id: item.id,
             nome: item.nome_alimento,
             gramas: item.quantidade_gramas,
-            kcal: item.calorias
+            kcal: item.calorias,
+            carboidratos: item.carboidratos ?? 0,
+            proteinas: item.proteinas ?? 0,
+            gorduras: item.gorduras ?? 0,
           });
         }
       });
@@ -54,11 +72,11 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     carregarRefeicoes();
   }, [carregarRefeicoes]);
 
-  const adicionarAlimento = useCallback(async (refeicao: string, nome: string, gramas: number) => {
+  const adicionarAlimento = useCallback(async (refeicao: string, alimento: AlimentoBusca, gramas: number) => {
     if (!usuarioId) return; 
 
-    const alimento = ALIMENTOS.find((a) => a.nome === nome);
-    const kcal = calcularKcal(alimento?.kcal100 ?? 100, gramas);
+    const nome = alimento.nome;
+    const kcal = calcularKcal(alimento.kcal_100g, gramas);
     
     try {
       const response = await apiFetch('/refeicoes/', {
@@ -70,9 +88,9 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
           nome_alimento: nome,
           quantidade_gramas: gramas,
           calorias: kcal,
-          carboidratos: 20.0, 
-          proteinas: 10.0,
-          gorduras: 5.0
+          carboidratos: porcao(alimento.carboidrato_100g, gramas),
+          proteinas: porcao(alimento.proteina_100g, gramas),
+          gorduras: porcao(alimento.gordura_100g, gramas),
         })
       });
 
@@ -80,7 +98,15 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
         ...atual,
         [refeicao]: [
           ...(atual[refeicao] ?? []), 
-          { id: response.id || Date.now(), nome, gramas, kcal }
+          {
+            id: response.id || Date.now(),
+            nome,
+            gramas,
+            kcal,
+            carboidratos: porcao(alimento.carboidrato_100g, gramas),
+            proteinas: porcao(alimento.proteina_100g, gramas),
+            gorduras: porcao(alimento.gordura_100g, gramas),
+          }
         ],
       }));
     } catch (error) {
@@ -101,7 +127,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <RefeicoesContext.Provider value={{ refeicoes, adicionarAlimento, removerAlimento, totalConsumido }}>
+    <RefeicoesContext.Provider value={{ refeicoes, adicionarAlimento, removerAlimento, totalConsumido, totaisMacros }}>
       {children}
     </RefeicoesContext.Provider>
   );
