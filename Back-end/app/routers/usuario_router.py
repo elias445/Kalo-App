@@ -7,6 +7,21 @@ from app.security import verificar_senha, gerar_hash_senha, criar_token_acesso, 
 
 router = APIRouter(prefix="/usuarios", tags=["Usuários"])
 
+
+def dados_do_usuario(usuario: UsuarioModel) -> dict:
+    campos_do_onboarding = [usuario.sexo, usuario.idade, usuario.altura, usuario.peso_atual, usuario.objetivo]
+    return {
+        "id": usuario.id,
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "sexo": usuario.sexo,
+        "idade": usuario.idade,
+        "altura": usuario.altura,
+        "peso_atual": usuario.peso_atual,
+        "objetivo": usuario.objetivo,
+        "onboarding_completo": all(campo is not None for campo in campos_do_onboarding),
+    }
+
 @router.post("/cadastro")
 def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     usuario_existente = db.query(UsuarioModel).filter(UsuarioModel.email == usuario.email).first()
@@ -27,12 +42,7 @@ def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
 
     return {
         "token": token,
-        "usuario": {
-            "id": novo_usuario.id,
-            "nome": novo_usuario.nome,
-            "email": novo_usuario.email,
-            "objetivo": novo_usuario.objetivo
-        }
+        "usuario": dados_do_usuario(novo_usuario)
     }
 
 @router.post("/login")
@@ -47,12 +57,7 @@ def login(dados: UsuarioLogin, db: Session = Depends(get_db)):
 
     return {
         "token": token,
-        "usuario": {
-            "id": usuario.id,
-            "nome": usuario.nome,
-            "email": usuario.email,
-            "objetivo": usuario.objetivo
-        }
+        "usuario": dados_do_usuario(usuario)
     }
 @router.put("/onboarding")
 def salvar_dados_onboarding(
