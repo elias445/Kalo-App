@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import { colors, gradients, glow } from '../theme';
 
-/** Rótulo pequeno em caixa-alta, usado acima de títulos e seções. */
 export function SectionLabel({ children, tone = 'cyan', dot = false }: { children: string; tone?: 'cyan' | 'muted'; dot?: boolean }) {
   const color = tone === 'cyan' ? colors.cyan : colors.muted;
   return (
@@ -77,15 +76,16 @@ export function ProgressBar({ progress, height = 6 }: { progress: number; height
   );
 }
 
-export function Chip({ label, selected, onPress, flex = false }: { label: string; selected: boolean; onPress: () => void; flex?: boolean }) {
+export function Chip({ label, selected, onPress, flex = false, ajustar = false }: { label: string; selected: boolean; onPress: () => void; flex?: boolean; ajustar?: boolean }) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
       style={{
         flex: flex ? 1 : undefined,
+        flexGrow: ajustar ? 1 : undefined,
         alignItems: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: ajustar ? 12 : 16,
         paddingVertical: 13,
         borderRadius: 16,
         borderWidth: 1,
@@ -93,12 +93,11 @@ export function Chip({ label, selected, onPress, flex = false }: { label: string
         backgroundColor: selected ? 'rgba(0,209,255,0.10)' : colors.surface,
       }}
     >
-      <Text style={{ color: selected ? colors.cyan : '#FFFFFF', fontWeight: '700', fontSize: 14 }}>{label}</Text>
+      <Text numberOfLines={ajustar ? 1 : undefined} style={{ color: selected ? colors.cyan : '#FFFFFF', fontWeight: '700', fontSize: ajustar ? 13 : 14 }}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-/** Quadradinho de ícone com brilho (logo, treino, vazio). */
 export function IconTile({ children, size = 56 }: { children: React.ReactNode; size?: number }) {
   return (
     <View
@@ -118,7 +117,6 @@ export function IconTile({ children, size = 56 }: { children: React.ReactNode; s
   );
 }
 
-/** Pílula informativa com ícone (tempo, kcal, quantidade...). */
 export function InfoChip({ icon, texto }: { icon: React.ReactNode; texto: string }) {
   return (
     <View
@@ -131,7 +129,6 @@ export function InfoChip({ icon, texto }: { icon: React.ReactNode; texto: string
   );
 }
 
-/** Quadradinho de ícone pequeno, tingido de ciano. */
 export function MiniTile({ children, size = 40 }: { children: React.ReactNode; size?: number }) {
   return (
     <View
@@ -143,7 +140,6 @@ export function MiniTile({ children, size = 40 }: { children: React.ReactNode; s
   );
 }
 
-/** Avatar com as iniciais do nome. `anel` desenha um contorno colorido (ex.: medalha ou "você"). */
 export function Avatar({ nome, size = 44, anel }: { nome: string; size?: number; anel?: string }) {
   const iniciais = nome.trim().split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || '?';
   return (

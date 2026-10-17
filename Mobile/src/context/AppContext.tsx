@@ -89,9 +89,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const iniciarSessao = async (usuario: any, novoToken: string) => {
     setToken(novoToken);
     setUsuarioId(usuario.id);
-    
-    const novoPerfil = { ...perfil, nome: usuario.nome, objetivo: usuario.objetivo || perfil.objetivo };
+
+    const novoPerfil = {
+      ...perfil,
+      nome: usuario.nome,
+      sexo: usuario.sexo ?? perfil.sexo,
+      idade: usuario.idade != null ? String(usuario.idade) : perfil.idade,
+      altura: usuario.altura != null ? String(usuario.altura) : perfil.altura,
+      objetivo: usuario.objetivo || perfil.objetivo,
+    };
     setPerfil(novoPerfil);
+    if (usuario.peso_atual != null) {
+      setPesos([{ value: usuario.peso_atual, label: rotuloHoje() }]);
+    }
 
     await AsyncStorage.setItem('@kalo_token', novoToken);
     await AsyncStorage.setItem('@kalo_id', usuario.id);

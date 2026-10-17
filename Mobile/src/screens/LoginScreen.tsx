@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Text, View, TouchableOpacity, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import Field from '../components/Field';
@@ -42,7 +42,11 @@ export default function LoginScreen() {
 
       if (response.ok) {
         await iniciarSessao(data.usuario, data.token);
-        navigation.navigate('Onboarding' as never);
+        if (data.usuario.onboarding_completo) {
+          navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
+        } else {
+          navigation.navigate('Onboarding' as never);
+        }
       } else {
         const mensagemErro = Array.isArray(data.detail) 
           ? 'Formato de dados inválido. Verifique o e-mail.' 
