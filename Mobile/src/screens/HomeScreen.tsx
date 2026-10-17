@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { Bell, Dumbbell, Clock, Flame, Layers, Moon, Wheat, Beef, Droplet } from 'lucide-react-native';
 import Screen from '../components/Screen';
@@ -9,6 +9,7 @@ import { Badge, IconButton, InfoChip, MiniTile, ProgressBar, SectionLabel } from
 import { useApp } from '../context/AppContext';
 import { diaDeHoje, estimarTreino } from '../data/treino';
 import { colors } from '../theme';
+import { configurarLembretesDiarios } from '../services/notifications';
 
 const SEMANA = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -18,6 +19,11 @@ const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 export default function HomeScreen() {
   const { perfil, metas, totalConsumido, plano } = useApp();
 
+  
+  useEffect(() => {
+    configurarLembretesDiarios();
+  }, []);
+
   const hoje = new Date();
   const dataTexto = `${SEMANA[hoje.getDay()]}, ${hoje.getDate()} DE ${MESES[hoje.getMonth()]}`;
   const primeiroNome = perfil.nome.trim().split(' ')[0];
@@ -25,7 +31,6 @@ export default function HomeScreen() {
   const restantes = metas.calorias - totalConsumido;
   const progresso = totalConsumido / metas.calorias;
 
-  // Macros consumidos estimados de forma proporcional às calorias já registradas
   const proporcao = Math.min(1, progresso);
   const macros = [
     { nome: 'Carboidratos', meta: metas.carboidrato, Icone: Wheat },
