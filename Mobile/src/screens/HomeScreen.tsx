@@ -1,3 +1,22 @@
+import React, { useEffect } from 'react';
+import { View, Text, Alert } from 'react-native';
+import { Bell, Dumbbell, Clock, Flame, Layers, Moon, Wheat, Beef, Droplet } from 'lucide-react-native';
+import Screen from '../components/Screen';
+import Card from '../components/Card';
+import HeroCard from '../components/HeroCard';
+import RingProgress from '../components/RingProgress';
+import { Badge, IconButton, InfoChip, MiniTile, ProgressBar, SectionLabel } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { useRefeicoes } from '../context/RefeicoesContext';
+import { diaDeHoje, estimarTreino } from '../data/treino';
+import { colors } from '../theme';
+import { configurarLembretesDiarios } from '../services/notifications';
+
+const SEMANA = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
+const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
 export default function HomeScreen() {
   const { perfil, metas, plano } = useApp();
   const { totalConsumido, totaisMacros } = useRefeicoes();
@@ -11,23 +30,21 @@ export default function HomeScreen() {
   
   const primeiroNome = perfil?.nome ? perfil.nome.trim().split(' ')[0] : 'Atleta';
 
- 
   const consumidoReal = totalConsumido || 0;
   const metaCalorias = metas?.calorias || 1; 
   const restantes = metaCalorias - consumidoReal;
   const progresso = consumidoReal / metaCalorias;
 
-  
   const macros = [
     { nome: 'Carboidratos', meta: metas?.carboidrato || 0, atual: Math.round(totaisMacros?.carboidratos || 0), Icone: Wheat },
     { nome: 'Proteínas', meta: metas?.proteina || 0, atual: Math.round(totaisMacros?.proteinas || 0), Icone: Beef },
     { nome: 'Gorduras', meta: metas?.gordura || 0, atual: Math.round(totaisMacros?.gorduras || 0), Icone: Droplet },
   ];
 
-  
   const treino = plano && plano[diaDeHoje()] ? plano[diaDeHoje()] : { titulo: 'Descanso', exercicios: [] };
   const descanso = treino?.exercicios?.length === 0;
   const estimativa = estimarTreino(treino?.exercicios || []);
+
   return (
     <Screen tabbed>
       <View className="flex-row justify-between items-start mb-6">
@@ -45,8 +62,8 @@ export default function HomeScreen() {
           <View className="items-center">
             <Text className="text-muted text-xs font-bold" style={{ letterSpacing: 2 }}>CALORIAS</Text>
             <View className="flex-row items-end mt-1">
-              <Text className="text-white font-extrabold" style={{ fontSize: 38, letterSpacing: -1 }}>{milhar(totalConsumido)}</Text>
-              <Text className="text-muted font-bold text-base mb-1.5 ml-1">/ {milhar(metas.calorias)}</Text>
+              <Text className="text-white font-extrabold" style={{ fontSize: 38, letterSpacing: -1 }}>{milhar(consumidoReal)}</Text>
+              <Text className="text-muted font-bold text-base mb-1.5 ml-1">/ {milhar(metaCalorias)}</Text>
             </View>
             <View className="mt-2">
               <Badge
@@ -55,7 +72,7 @@ export default function HomeScreen() {
               />
             </View>
             <Text className="text-muted text-sm font-semibold mt-2.5">
-              Meta diária: <Text className="text-white font-bold">{milhar(metas.calorias)} kcal</Text>
+              Meta diária: <Text className="text-white font-bold">{milhar(metaCalorias)} kcal</Text>
             </Text>
           </View>
         </RingProgress>
