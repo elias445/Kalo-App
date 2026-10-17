@@ -1,10 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true, 
+    shouldShowList: true,   
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -37,7 +37,7 @@ export async function configurarLembretesDiarios() {
 
   await agendarRefeicao('Café da Manhã', 8, 0, 'Já tomou seu café? Anote o que consumiu! ☕');
   await agendarRefeicao('Almoço', 12, 30, 'Hora do almoço! Não esqueça de registrar no diário. 🥗');
-  await agendarRefeicao('Jantar', 19, 0, 'O que tivemos para o jantar? Mantenha o foco! 🍽️');
+  await agendarRefeicao('Jantar', 1, 25, 'O que tivemos para o jantar? Mantenha o foco! 🍽️'); // Corrigido o 01 para 1
 }
 
 async function agendarRefeicao(titulo: string, hora: number, minuto: number, corpo: string) {
@@ -50,7 +50,8 @@ async function agendarRefeicao(titulo: string, hora: number, minuto: number, cor
     trigger: {
       hour: hora,
       minute: minuto,
-      repeats: true, // Repete todos os dias nesse horário
+      repeats: true,
+      channelId: 'default'
     },
   });
 }
