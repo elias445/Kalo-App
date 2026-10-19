@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from app.database import Base
 
+# Tabela dos exercícios planejados por dia da semana
 class TreinoPlanejado(Base):
     __tablename__ = "treinos_planejados"
 

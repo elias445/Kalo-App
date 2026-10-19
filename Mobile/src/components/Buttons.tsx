@@ -12,6 +12,7 @@ type GradientProps = {
   style?: StyleProp<ViewStyle>;
 };
 
+// Botão principal com gradiente
 export function GradientButton({ label, onPress, icon, variant = 'primary', uppercase = false, style }: GradientProps) {
   const textColor = variant === 'cyan' ? colors.ink : '#FFFFFF';
   return (
@@ -43,6 +44,7 @@ type OutlineProps = {
   style?: StyleProp<ViewStyle>;
 };
 
+// Botão com borda (vermelho para ações perigosas)
 export function OutlineButton({ label, onPress, icon, tone = 'cyan', style }: OutlineProps) {
   const color = tone === 'danger' ? colors.danger : colors.cyan;
   return (

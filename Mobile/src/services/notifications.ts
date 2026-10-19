@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+// Define como a notificação aparece com o app aberto
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true, 
@@ -10,6 +11,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Pede permissão e agenda um lembrete para cada refeição
 export async function configurarLembretesDiarios() {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -33,6 +35,7 @@ export async function configurarLembretesDiarios() {
     });
   }
 
+  // Remove agendamentos antigos para não duplicar
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   await agendarRefeicao('Café da Manhã', 8, 0, 'Já tomou seu café? Anote o que consumiu! ☕');
@@ -43,6 +46,7 @@ export async function configurarLembretesDiarios() {
   await agendarRefeicao('Ceia', 22, 0, 'Última refeição do dia. Hora de relaxar! 🥛');
 }
 
+// Agenda uma notificação que se repete todo dia no horário
 async function agendarRefeicao(titulo: string, hora: number, minuto: number, corpo: string) {
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -57,6 +61,7 @@ async function agendarRefeicao(titulo: string, hora: number, minuto: number, cor
       channelId: 'default'
     },});
 }
+// Lista as notificações que estão na bandeja do celular
 export async function checarNotificacoesNaTela() {
   const notificacoesAtivas = await Notifications.getPresentedNotificationsAsync();
   return notificacoesAtivas;

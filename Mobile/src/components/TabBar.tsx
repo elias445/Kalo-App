@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Home, Dumbbell, Utensils, User, Trophy } from 'lucide-react-native';
 import { colors, gradients, glow } from '../theme';
 
+// Rótulo e ícone de cada aba
 const ITENS: Record<string, { label: string; Icon: typeof Home }> = {
   Home: { label: 'Início', Icon: Home },
   Treino: { label: 'Treino', Icon: Dumbbell },
@@ -17,12 +18,12 @@ const ITENS: Record<string, { label: string; Icon: typeof Home }> = {
 // Quanto o botão central sobe acima da barra
 const ELEVACAO = 20;
 
+// Barra de abas personalizada, com a Comunidade em destaque
 export default function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={{ paddingBottom: Math.max(insets.bottom, 10) }}>
-      {/* Fundo da barra: começa abaixo da área ocupada pelo botão elevado */}
       <View
         pointerEvents="none"
         style={{

@@ -6,11 +6,11 @@ import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 type Props = {
   children: React.ReactNode;
   scroll?: boolean;
-  /** true quando a tela fica dentro das abas (a tab bar já cuida do espaço inferior) */
   tabbed?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 };
 
+// Brilho azul no topo da tela
 function Glow() {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 460 }}>
@@ -36,6 +36,7 @@ function Glow() {
   );
 }
 
+// Base de todas as telas: fundo, rolagem, teclado e áreas seguras
 export default function Screen({ children, scroll = true, tabbed = false, contentStyle }: Props) {
   const insets = useSafeAreaInsets();
   const padding = {

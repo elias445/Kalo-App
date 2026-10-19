@@ -1,12 +1,19 @@
+// Exercício do plano de treino
 export type Exercicio = { id: number; nome: string; grupo: string; series: number; reps: number; carga: number };
+// Treino de um dia da semana
 export type DiaTreino = { titulo: string; exercicios: Exercicio[] };
+// Exercício recomendado (sem id)
 export type ExercicioSugerido = Omit<Exercicio, 'id'>;
 
+// Dias da semana (domingo é o índice 0)
 export const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+// Atalho para criar um exercício do plano
 const ex = (id: number, nome: string, grupo: string, series: number, reps: number, carga: number): Exercicio => ({ id, nome, grupo, series, reps, carga });
+// Atalho para criar um exercício recomendado
 const sug = (grupo: string, nome: string, series: number, reps: number, carga: number): ExercicioSugerido => ({ nome, grupo, series, reps, carga });
 
+// Plano padrão: treino de segunda a sexta e descanso no fim de semana
 export const PLANO_PADRAO: Record<string, DiaTreino> = {
   Dom: { titulo: 'Descanso', exercicios: [] },
   Seg: {
@@ -59,7 +66,7 @@ export const PLANO_PADRAO: Record<string, DiaTreino> = {
   Sáb: { titulo: 'Descanso', exercicios: [] },
 };
 
-// Exercícios recomendados, usados para substituir ou adicionar no treino
+// Exercícios recomendados para adicionar ou substituir
 export const CATALOGO: ExercicioSugerido[] = [
   sug('Peito', 'Supino reto', 3, 12, 80),
   sug('Peito', 'Supino inclinado', 3, 12, 60),
@@ -116,14 +123,17 @@ export const CATALOGO: ExercicioSugerido[] = [
   sug('Funcional', 'Corda naval', 3, 30, 0),
 ];
 
+// Grupos musculares do catálogo
 export const GRUPOS = Array.from(new Set(CATALOGO.map((e) => e.grupo)));
 
+// Sigla do dia da semana de hoje
 export const diaDeHoje = () => DIAS[new Date().getDay()];
 
-// Estimativas simples para exibir no resumo do treino
+// Estimativa de duração e calorias do treino
 export const estimarTreino = (exercicios: Exercicio[]) => {
   const minutos = exercicios.length * 9;
   return { minutos, kcal: minutos * 7 };
 };
 
+// Texto da carga (ou peso corporal)
 export const formatarCarga = (carga: number) => (carga > 0 ? `${carga} kg` : 'Peso corporal');

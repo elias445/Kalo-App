@@ -8,21 +8,25 @@ from app.use_cases.realizar_login import realizar_login
 from app.use_cases.salvar_onboarding import salvar_onboarding
 from app.use_cases.sessao import iniciar_sessao
 
+# Agrupa as rotas sob /usuarios
 router = APIRouter(prefix="/usuarios", tags=["Usuários"])
 
 
+# POST /usuarios/cadastro: cria a conta e já inicia a sessão
 @router.post("/cadastro")
 def cadastro(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     novo_usuario = cadastrar_usuario(db=db, usuario=usuario)
     return iniciar_sessao(novo_usuario)
 
 
+# POST /usuarios/login: confere as credenciais e inicia a sessão
 @router.post("/login")
 def login(dados: UsuarioLogin, db: Session = Depends(get_db)):
     usuario = realizar_login(db=db, dados=dados)
     return iniciar_sessao(usuario)
 
 
+# PUT /usuarios/onboarding: salva os dados biométricos (exige login)
 @router.put("/onboarding")
 def onboarding(
     dados: UsuarioOnboarding,

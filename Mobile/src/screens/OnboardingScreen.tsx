@@ -13,6 +13,7 @@ import { colors } from '../theme';
 import { apiFetch } from '../services/api';
 
 
+// Tela de dados biométricos (passo 1 do onboarding)
 export default function OnboardingScreen() {
   const navigation = useNavigation();
   const { perfil, pesoAtual, atualizarPerfil, registrarPeso, usuarioId } = useApp();
@@ -24,6 +25,7 @@ export default function OnboardingScreen() {
   const [objetivo, setObjetivo] = useState(perfil.objetivo);
   const [sheetAberto, setSheetAberto] = useState(false);
 
+  // Salva os dados e o primeiro peso no servidor e abre o plano gerado
   const gerarPlano = async () => {
     const pesoNumero = parseFloat(peso.replace(',', '.'));
     
@@ -44,7 +46,7 @@ export default function OnboardingScreen() {
         })
       });
 
-      // O peso informado no onboarding é o primeiro registro do histórico de peso
+      // O peso informado é o primeiro registro do histórico de peso
       if (usuarioId) {
         await apiFetch('/medidas/', {
           method: 'POST',

@@ -12,18 +12,21 @@ import { useApp } from '../context/AppContext';
 import { DIAS, diaDeHoje, estimarTreino } from '../data/treino';
 import { colors, gradients } from '../theme';
 
-const ORDEM_SEMANA = [...DIAS.slice(1), DIAS[0]]; // Seg ... Dom
+// Semana de segunda a domingo
+const ORDEM_SEMANA = [...DIAS.slice(1), DIAS[0]];
 
+// Tela do plano gerado: meta diária e treino da semana
 export default function PlanoGeradoScreen() {
   const navigation = useNavigation();
   const { perfil, metas, plano } = useApp();
   const hoje = diaDeHoje();
 
+  // Entra no app e limpa o histórico de navegação
   const iniciar = () => {
     navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
   };
 
-  // Participação de cada macro nas calorias (carboidrato e proteína: 4 kcal/g, gordura: 9 kcal/g)
+  // Parte de cada macro nas calorias (carbo e proteína: 4 kcal/g, gordura: 9 kcal/g)
   const macros = [
     { nome: 'Carboidratos', valor: metas.carboidrato, kcal: metas.carboidrato * 4 },
     { nome: 'Proteínas', valor: metas.proteina, kcal: metas.proteina * 4 },

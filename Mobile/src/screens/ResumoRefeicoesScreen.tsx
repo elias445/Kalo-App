@@ -12,6 +12,7 @@ import { REFEICOES, useApp } from '../context/AppContext';
 import { colors } from '../theme';
 import { useRefeicoes } from '../context/RefeicoesContext';
 
+// Ícone de cada refeição
 const ICONES: Record<string, LucideIcon> = {
   'Café da manhã': Coffee,
   'Lanche da manhã': Apple,
@@ -21,8 +22,10 @@ const ICONES: Record<string, LucideIcon> = {
   'Ceia': Moon,
 };
 
+// Formata número com ponto de milhar
 const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
+// Tela da aba Dieta: resumo do dia e as 6 refeições
 export default function ResumoRefeicoesScreen() {
   const navigation = useNavigation<any>();
   const { metas } = useApp(); 
@@ -31,7 +34,7 @@ export default function ResumoRefeicoesScreen() {
   const progresso = totalConsumido / metas.calorias;
   const restantes = metas.calorias - totalConsumido;
 
-  // As refeições formam uma grade de 2 colunas que ocupa o espaço restante (sem scroll)
+  // Refeições em grade de 2 colunas (sem rolagem)
   const linhas = [0, 2, 4].map((i) => REFEICOES.slice(i, i + 2));
 
   return (

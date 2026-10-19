@@ -9,11 +9,15 @@ from app.models.alimento import AlimentoModel
 from app.schemas.alimento import AlimentoBusca
 from app.use_cases.carregar_taco import normalizar
 
+# Endereço da API do Open Food Facts
 URL_OPEN_FOOD_FACTS = "https://search.openfoodfacts.org/search"
+# Identificação enviada à API
 USER_AGENT = "Kalo/1.0 (projeto academico)"
+# Tempo máximo de espera pela API
 TIMEOUT_SEGUNDOS = 6
 
 
+# Busca no nosso banco: todas as palavras digitadas precisam estar no nome
 def buscar_na_taco(db: Session, termo: str, limite: int) -> List[AlimentoBusca]:
     consulta = db.query(AlimentoModel)
     for palavra in normalizar(termo).split():
@@ -37,14 +41,17 @@ def buscar_na_taco(db: Session, termo: str, limite: int) -> List[AlimentoBusca]:
         for a in encontrados
     ]
 
+# Devolve o valor se for número
 def _numero(valor) -> Optional[float]:
     return float(valor) if isinstance(valor, (int, float)) else None
 
+# Confere se as kcal batem com os macros (4, 4 e 9 kcal por grama)
 def _calorias_coerentes(kcal: float, proteina: float, carboidrato: float, gordura: float) -> bool:
     estimado = 4 * proteina + 4 * carboidrato + 9 * gordura
     return abs(estimado - kcal) <= max(40, 0.3 * kcal)
 
 
+# Pega fibra, açúcar, gorduras e sódio (em mg) do produto
 def _nutrientes_extras(nutrientes: dict) -> dict:
     extras = {}
     for chave_off, chave in (
@@ -62,6 +69,7 @@ def _nutrientes_extras(nutrientes: dict) -> dict:
     return extras
 
 
+# Lê o tamanho da porção em gramas
 def _porcao(produto: dict):
     gramas = produto.get("serving_quantity")
     try:
@@ -74,6 +82,7 @@ def _porcao(produto: dict):
     return round(gramas, 1), descricao
 
 
+# Lê o peso da embalagem em gramas
 def _embalagem_g(produto: dict) -> Optional[float]:
     texto = str(produto.get("quantity") or "").strip().lower().replace(",", ".")
     achado = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(g|kg)", texto)
@@ -83,6 +92,7 @@ def _embalagem_g(produto: dict) -> Optional[float]:
     return round(gramas, 1) if 0 < gramas <= 5000 else None
 
 
+# Busca produtos do Brasil no Open Food Facts
 def buscar_industrializados(termo: str, limite: int) -> List[AlimentoBusca]:
     parametros = urllib.parse.urlencode(
         {
@@ -98,6 +108,7 @@ def buscar_industrializados(termo: str, limite: int) -> List[AlimentoBusca]:
     with urllib.request.urlopen(requisicao, timeout=TIMEOUT_SEGUNDOS) as resposta:
         dados = json.load(resposta)
 
+    # Descarta produtos incompletos, incoerentes e repetidos
     resultados: List[AlimentoBusca] = []
     ja_vistos = set()
     for produto in dados.get("hits", []):

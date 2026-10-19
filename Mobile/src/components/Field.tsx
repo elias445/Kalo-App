@@ -10,6 +10,7 @@ type Props = TextInputProps & {
   labelRight?: React.ReactNode;
 };
 
+// Campo de texto com ícone, rótulo e destaque ao focar
 export default function Field({ label, icon: Icon, right, labelRight, onFocus, onBlur, ...input }: Props) {
   const [focado, setFocado] = useState(false);
 
@@ -47,7 +48,7 @@ export default function Field({ label, icon: Icon, right, labelRight, onFocus, o
   );
 }
 
-/** Linha de formulário: título + legenda à esquerda e valor numérico em caixa à direita. */
+// Linha com campo numérico e unidade (idade, altura, peso)
 export function NumberRow({ icon: Icon, title, hint, unit, value, onChangeText }: {
   icon?: LucideIcon;
   title: string;

@@ -10,8 +10,10 @@ import { Avatar, BackButton, Chip, MiniTile, SectionLabel } from '../components/
 import { useApp } from '../context/AppContext';
 import { colors } from '../theme';
 
+// Durações disponíveis, em dias
 const DURACOES = [7, 14, 30, 60];
 
+// Tela para criar um novo desafio
 export default function NovoDesafioScreen() {
   const navigation = useNavigation();
   const { amigos, criarDesafio } = useApp();
@@ -23,9 +25,11 @@ export default function NovoDesafioScreen() {
   const [selecionados, setSelecionados] = useState<string[]>(amigosAtivos.map((a) => a.id));
   const [regras, setRegras] = useState({ treino: true, calorias: true, sequencia: true });
 
+  // Marca ou desmarca um participante
   const alternar = (id: string) =>
     setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]));
 
+  // Valida e cria o desafio
   const criar = () => {
     if (!nome.trim()) {
       Alert.alert('Dê um nome ao desafio', 'Informe um nome para o desafio.');
@@ -39,6 +43,7 @@ export default function NovoDesafioScreen() {
     navigation.goBack();
   };
 
+  // Regras de pontuação do desafio
   const linhasRegras = [
     { chave: 'treino' as const, titulo: 'Treino concluído', pontos: '+50', Icone: Dumbbell },
     { chave: 'calorias' as const, titulo: 'Meta de calorias cumprida', pontos: '+30', Icone: Target },

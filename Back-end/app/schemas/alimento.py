@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 
+# Formato de um alimento na busca (TACO ou Open Food Facts)
 class AlimentoBusca(BaseModel):
     id: str
     nome: str
@@ -18,6 +19,7 @@ class AlimentoBusca(BaseModel):
     embalagem_g: Optional[float] = None
 
 
+# Resposta da busca: lista de alimentos e avisos
 class BuscaAlimentosResponse(BaseModel):
     resultados: List[AlimentoBusca]
     avisos: List[str] = []

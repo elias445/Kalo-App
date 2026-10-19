@@ -3,6 +3,7 @@ import { apiFetch } from '../services/api';
 import { AlimentoBusca, calcularKcal, porcao } from '../data/alimentos';
 import { useApp } from './AppContext'; 
 
+// Alimento registrado numa refeição, com kcal e macros
 export type ItemRefeicao = {
   id: string | number;
   nome: string;
@@ -13,6 +14,7 @@ export type ItemRefeicao = {
   gorduras: number;
 };
 
+// O que o contexto oferece às telas
 type RefeicoesState = {
   refeicoes: Record<string, ItemRefeicao[]>;
   adicionarAlimento: (refeicao: string, alimento: AlimentoBusca, gramas: number) => Promise<void>;
@@ -21,8 +23,10 @@ type RefeicoesState = {
   totaisMacros: { carboidratos: number; proteinas: number; gorduras: number };
 };
 
+// Contexto do diário de refeições
 const RefeicoesContext = createContext<RefeicoesState | null>(null);
 
+// Provedor do diário: carrega, adiciona e remove alimentos pelo servidor
 export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
   const { usuarioId } = useApp(); 
 
@@ -30,6 +34,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
   });
 
+  // Totais do dia calculados a partir dos itens
   const itens = Object.values(refeicoes).flat();
   const totalConsumido = itens.reduce((soma, item) => soma + item.kcal, 0);
   const totaisMacros = {
@@ -38,6 +43,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     gorduras: itens.reduce((soma, item) => soma + item.gorduras, 0),
   };
 
+  // Busca o diário no servidor e agrupa por refeição
   const carregarRefeicoes = useCallback(async () => {
     if (!usuarioId) return; 
 
@@ -68,10 +74,12 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     }
   }, [usuarioId]); 
 
+  // Recarrega o diário quando o usuário muda
   useEffect(() => {
     carregarRefeicoes();
   }, [carregarRefeicoes]);
 
+  // Calcula kcal e macros da porção, salva no servidor e atualiza a tela
   const adicionarAlimento = useCallback(async (refeicao: string, alimento: AlimentoBusca, gramas: number) => {
     if (!usuarioId) return; 
 
@@ -114,6 +122,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     }
   }, [usuarioId]);
 
+  // Remove o alimento no servidor e na tela
   const removerAlimento = useCallback(async (refeicao: string, id: string | number) => {
     try {
       await apiFetch(`/refeicoes/${id}`, { method: 'DELETE' });
@@ -133,6 +142,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Hook para as telas usarem o diário
 export function useRefeicoes() {
   const ctx = useContext(RefeicoesContext);
   if (!ctx) throw new Error('useRefeicoes deve ser usado dentro de RefeicoesProvider');

@@ -19,9 +19,12 @@ const avaliarSenha = (senha: string) => {
   return pontos;
 };
 
+// Texto de cada nível de força da senha
 const ROTULOS = ['', 'Fraca', 'Razoável', 'Boa', 'Forte'];
+// Cor de cada nível de força da senha
 const CORES = ['', colors.danger, '#F59E0B', colors.cyan, colors.ok];
 
+// Tela de cadastro
 export default function CadastroScreen() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -32,6 +35,7 @@ export default function CadastroScreen() {
 
   const forca = senha ? avaliarSenha(senha) : 0;
 
+  // Valida os dados e cria a conta pela API
   const handleCadastro = async () => {
     if (!nome.trim() || !email.trim() || !senha) {
       Alert.alert('Campos obrigatórios', 'Preencha todos os campos para continuar.');

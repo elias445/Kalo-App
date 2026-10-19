@@ -10,6 +10,7 @@ import { useApp } from '../context/AppContext';
 import { CATALOGO, Exercicio, ExercicioSugerido, GRUPOS } from '../data/treino';
 import { colors } from '../theme';
 
+// Tela para substituir ou adicionar um exercício
 export default function EditarExercicioScreen() {
   const navigation = useNavigation();
   const route = useRoute<any>();
@@ -17,25 +18,29 @@ export default function EditarExercicioScreen() {
 
   const dia: string = route.params.dia;
   const atual: Exercicio | undefined = route.params.exercicio;
+  // Com um exercício recebido é substituição; sem ele, é adição
   const substituindo = !!atual;
 
   const [escolhido, setEscolhido] = useState<ExercicioSugerido | null>(null);
 
   const nomesNoDia = plano[dia].exercicios.map((e) => e.nome);
 
-  // Substituir: recomendados do mesmo grupo muscular. Adicionar: grupos já treinados no dia (ou todos, se o dia estiver vazio).
+  // Substituir: recomendados do mesmo grupo. Adicionar: grupos já treinados no dia
   const gruposAdicionar = Array.from(new Set(plano[dia].exercicios.map((e) => e.grupo)));
   const grupos = substituindo ? [atual!.grupo] : gruposAdicionar.length ? gruposAdicionar : GRUPOS;
 
+  // Recomendados do grupo que ainda não estão no dia
   const recomendados = (grupo: string) => CATALOGO.filter((e) => e.grupo === grupo && !nomesNoDia.includes(e.nome));
   const secoes = grupos.map((grupo) => ({ grupo, itens: recomendados(grupo) })).filter((s) => s.itens.length > 0);
 
+  // Salva o exercício escolhido
   const confirmar = () => {
     if (!escolhido) return;
     salvarExercicio(dia, { ...escolhido, id: atual?.id });
     navigation.goBack();
   };
 
+  // Pede confirmação e remove o exercício
   const excluir = () => {
     Alert.alert('Remover exercício', `Remover "${atual?.nome}" do treino?`, [
       { text: 'Cancelar', style: 'cancel' },

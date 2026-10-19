@@ -11,17 +11,22 @@ import { useApp } from '../context/AppContext';
 import { ATIVIDADES, EU, REGRAS_PONTOS } from '../data/comunidade';
 import { colors } from '../theme';
 
+// Abas da tela
 type Aba = 'Ranking' | 'Amigos' | 'Atividade';
 const ABAS: Aba[] = ['Ranking', 'Amigos', 'Atividade'];
 
+// Cores de ouro, prata e bronze
 const MEDALHAS = ['#F5B301', '#B8C1D1', '#D98A4E'];
 
+// Uma linha do ranking
 type Posicao = { id: string; nome: string; pontos: number; treinos: number; sequencia: number; eu?: boolean };
 
+// Formata número com ponto de milhar
 const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
+// Pódio com os 3 primeiros do ranking
 function Podio({ posicoes }: { posicoes: Posicao[] }) {
-  // Ordem visual: 2º, 1º, 3º
+  // Ordem visual: 2º, 1º e 3º
   const ordem = [1, 0, 2];
   const alturas = [96, 72, 56];
   return (
@@ -57,12 +62,14 @@ function Podio({ posicoes }: { posicoes: Posicao[] }) {
   );
 }
 
+// Tela da Comunidade: desafio, ranking, amigos e atividades
 export default function ComunidadeScreen() {
   const navigation = useNavigation<any>();
   const { perfil, amigos, desafio } = useApp();
   const [aba, setAba] = useState<Aba>('Ranking');
   const [curtidas, setCurtidas] = useState<Record<string, boolean>>({});
 
+  // Ranking: o usuário e os participantes do desafio, ordenados por pontos
   const ranking = useMemo<Posicao[]>(() => {
     const participantes = desafio.participantes
       .map((id) => amigos.find((a) => a.id === id))
@@ -72,6 +79,7 @@ export default function ComunidadeScreen() {
       .sort((a, b) => b.pontos - a.pontos);
   }, [amigos, desafio, perfil.nome]);
 
+  // Posição do usuário e progresso do desafio
   const minhaPosicao = ranking.findIndex((p) => p.eu) + 1;
   const progressoDias = desafio.diaAtual / desafio.duracao;
   const restantes = ranking.slice(3);

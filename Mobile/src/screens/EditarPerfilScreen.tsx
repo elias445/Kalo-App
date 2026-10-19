@@ -11,6 +11,7 @@ import { useApp } from '../context/AppContext';
 import { OBJETIVOS, SEXOS } from '../data/perfil';
 import { gradients } from '../theme';
 
+// Tela para editar os dados do perfil
 export default function EditarPerfilScreen() {
   const navigation = useNavigation();
   const { perfil, atualizarPerfil } = useApp();
@@ -23,6 +24,7 @@ export default function EditarPerfilScreen() {
 
   const iniciais = nome.trim().split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || '?';
 
+  // Valida e salva o perfil (apenas no app)
   const salvar = () => {
     if (!nome.trim()) {
       Alert.alert('Nome obrigatório', 'Informe seu nome.');

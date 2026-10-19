@@ -8,6 +8,7 @@ import { GradientButton } from '../components/Buttons';
 import { colors } from '../theme';
 import { useApp } from '../context/AppContext';
 
+// Tela de login
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -16,6 +17,7 @@ export default function LoginScreen() {
 
   const { iniciarSessao } = useApp();
 
+  // Valida os campos, chama a API e segue para o app ou para o onboarding
   const handleLogin = async () => {
     if (!email.trim() || !senha) {
       Alert.alert('Campos vazios', 'Preencha o e-mail e a senha.');
@@ -60,6 +62,7 @@ export default function LoginScreen() {
     }
   };
 
+  // Aviso para recursos ainda não implementados
   const emBreve = (recurso: string) => Alert.alert('Em breve', `${recurso} estará disponível nas próximas versões.`);
 
   return (

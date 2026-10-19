@@ -10,27 +10,31 @@ import { Badge, IconButton, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { colors, gradients, glow } from '../theme';
 
+// Nomes dos meses para o calendário
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+// Iniciais dos dias da semana
 const CABECALHO_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-// Histórico simulado (até existir registro real): dias de treino fixos na semana (Seg, Ter, Qui, Sex, Sáb)
-// e uma falta a cada dia 9/18/27 para a consistência não ficar sempre em 100%.
+// Histórico de treino simulado: treina seg, ter, qui, sex e sáb, com uma falta nos dias 9, 18 e 27
 const DIAS_DE_TREINO = [1, 2, 4, 5, 6];
 const treinoPlanejado = (data: Date) => DIAS_DE_TREINO.includes(data.getDay());
 const treinouEm = (data: Date) => treinoPlanejado(data) && data.getDate() % 9 !== 0;
 
+// Peso com 1 casa decimal e vírgula
 const formatarKg = (n: number) => n.toFixed(1).replace('.', ',');
 
+// Tela de perfil: peso, estatísticas e frequência de treino
 export default function PerfilScreen() {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
   const { perfil, pesos, pesoAtual } = useApp();
 
+  // Volta para a tela de login
   const handleLogout = () => {
     navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
   };
 
-  // --- Peso ---
+  // Dados e medidas do gráfico de peso
   const variacao = pesoAtual - pesos[0].value;
   const emQueda = variacao <= 0;
   const valores = pesos.map((p) => p.value);
@@ -40,7 +44,7 @@ export default function PerfilScreen() {
   const larguraGrafico = width - 48 - 36 - larguraRotulosY - 8;
   const espacamento = pesos.length > 1 ? (larguraGrafico - 28) / (pesos.length - 1) : 0;
 
-  // --- Frequência (mês atual) ---
+  // Dados do calendário do mês atual
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = hoje.getMonth();
@@ -52,9 +56,10 @@ export default function PerfilScreen() {
   const diasPassados = Array.from({ length: diaHoje - 1 }, (_, i) => i + 1);
   const planejadosPassados = diasPassados.filter((d) => treinoPlanejado(new Date(ano, mes, d))).length;
   const totalTreinados = diasPassados.filter(treinou).length;
+  // Consistência: treinos feitos dividido pelos planejados
   const consistencia = planejadosPassados ? Math.round((totalTreinados / planejadosPassados) * 100) : 100;
 
-  // Sequência: treinos planejados cumpridos em seguida, até a primeira falta (dias de descanso não quebram)
+  // Sequência de treinos seguidos (dias de descanso não quebram)
   let sequencia = 0;
   for (let i = 1; i <= 365; i++) {
     const data = new Date(ano, mes, diaHoje - i);
@@ -63,7 +68,7 @@ export default function PerfilScreen() {
     sequencia++;
   }
 
-  // Semanas de 7 colunas (domingo a sábado), completadas com células vazias
+  // Calendário em semanas de 7 colunas, de domingo a sábado
   const celulas: (number | null)[] = [
     ...Array.from({ length: primeiroDiaSemana }, () => null),
     ...Array.from({ length: diasNoMes }, (_, i) => i + 1),

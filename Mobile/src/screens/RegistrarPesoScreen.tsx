@@ -10,9 +10,12 @@ import { useApp } from '../context/AppContext';
 import { apiFetch } from '../services/api';
 import { colors } from '../theme';
 
+// Converte texto com vírgula em número
 const paraNumero = (texto: string) => parseFloat(texto.replace(',', '.'));
+// Número com 1 casa decimal e vírgula
 const formatar = (n: number) => n.toFixed(1).replace('.', ',');
 
+// Tela para registrar o peso do dia
 export default function RegistrarPesoScreen() {
   const navigation = useNavigation();
   const { pesoAtual, registrarPeso, usuarioId } = useApp();
@@ -23,14 +26,17 @@ export default function RegistrarPesoScreen() {
   const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
 
   const valor = paraNumero(peso);
+  // Peso válido: entre 20 e 400 kg
   const valido = !!valor && valor >= 20 && valor <= 400;
   const diferenca = valido ? valor - pesoAtual : 0;
 
+  // Botões de -0,1 e +0,1 kg
   const ajustar = (delta: number) => {
     const base = valido ? valor : pesoAtual;
     setPeso(formatar(Math.max(20, Math.round((base + delta) * 10) / 10)));
   };
 
+  // Envia o peso ao servidor e só então atualiza a tela
   const salvar = async () => {
     if (salvando) return;
     if (!valido) {

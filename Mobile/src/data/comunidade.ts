@@ -1,3 +1,4 @@
+// Dados de um amigo
 export type Amigo = {
   id: string;
   nome: string;
@@ -8,6 +9,7 @@ export type Amigo = {
   status: 'ativo' | 'pendente';
 };
 
+// Dados de um desafio
 export type Desafio = {
   nome: string;
   duracao: number;
@@ -15,6 +17,7 @@ export type Desafio = {
   participantes: string[];
 };
 
+// Item do feed de atividades
 export type Atividade = {
   id: string;
   autor: string;
@@ -24,7 +27,7 @@ export type Atividade = {
   curtidas: number;
 };
 
-// Dados de exemplo até existir backend
+// Amigos de exemplo (ainda sem servidor)
 export const AMIGOS_INICIAIS: Amigo[] = [
   { id: 'ana', nome: 'Ana Costa', usuario: 'ana.costa', pontos: 1420, treinos: 21, sequencia: 18, status: 'ativo' },
   { id: 'bruno', nome: 'Bruno Lima', usuario: 'bruno.lima', pontos: 1190, treinos: 17, sequencia: 6, status: 'ativo' },
@@ -34,6 +37,7 @@ export const AMIGOS_INICIAIS: Amigo[] = [
   { id: 'felipe', nome: 'Felipe Rocha', usuario: 'felipe.rocha', pontos: 0, treinos: 0, sequencia: 0, status: 'pendente' },
 ];
 
+// Desafio de exemplo
 export const DESAFIO_INICIAL: Desafio = {
   nome: 'Desafio 30 dias',
   duracao: 30,
@@ -41,15 +45,17 @@ export const DESAFIO_INICIAL: Desafio = {
   participantes: ['ana', 'bruno', 'carla', 'diego', 'marina'],
 };
 
-// Estatísticas do próprio usuário no desafio
+// Estatísticas do próprio usuário (exemplo)
 export const EU = { id: 'eu', pontos: 1240, treinos: 18, sequencia: 13 };
 
+// Sugestões de amigos (exemplo)
 export const SUGESTOES = [
   { nome: 'Lucas Martins', usuario: 'lucasm' },
   { nome: 'Julia Ferreira', usuario: 'ju.ferreira' },
   { nome: 'Rafael Nunes', usuario: 'rafaelnunes' },
 ];
 
+// Feed de atividades (exemplo)
 export const ATIVIDADES: Atividade[] = [
   { id: '1', autor: 'Ana Costa', acao: 'concluiu o treino', detalhe: 'Pernas  •  45 min', tempo: 'há 20 min', curtidas: 6 },
   { id: '2', autor: 'Bruno Lima', acao: 'bateu a meta de proteína', detalhe: '152 g de 150 g', tempo: 'há 1 h', curtidas: 3 },
@@ -58,11 +64,13 @@ export const ATIVIDADES: Atividade[] = [
   { id: '5', autor: 'Marina Dias', acao: 'registrou o peso', detalhe: '−0,6 kg na semana', tempo: 'ontem', curtidas: 5 },
 ];
 
+// Regras de pontuação do desafio
 export const REGRAS_PONTOS = [
   { titulo: 'Treino concluído', pontos: '+50' },
   { titulo: 'Meta de calorias cumprida', pontos: '+30' },
   { titulo: 'Sequência de treinos', pontos: '+10 por dia' },
 ];
 
+// Iniciais do nome, usadas no avatar
 export const iniciais = (nome: string) =>
   nome.trim().split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || '?';

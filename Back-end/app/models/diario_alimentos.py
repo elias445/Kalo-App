@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 import uuid
 
+# Tabela do diário: cada alimento registrado numa refeição
 class DiarioAlimentosModel(Base):
     __tablename__ = "diario_alimentos"
 
@@ -18,4 +19,5 @@ class DiarioAlimentosModel(Base):
     proteinas = Column(Float, nullable=False)
     gorduras = Column(Float, nullable=False)
 
+    # Ligação com o usuário dono do registro
     usuario = relationship("UsuarioModel", back_populates="refeicoes")

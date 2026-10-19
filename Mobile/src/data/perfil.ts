@@ -1,6 +1,7 @@
+// Opções de sexo biológico
 export const SEXOS = ['Masculino', 'Feminino', 'Outro'];
 
-// ajuste: variação calórica diária (kcal) aplicada sobre o gasto estimado
+// Objetivos e o ajuste diário de calorias de cada um
 export const OBJETIVOS = [
   { nome: 'Emagrecimento', ajuste: -500 },
   { nome: 'Hipertrofia e Ganho de Massa', ajuste: 300 },

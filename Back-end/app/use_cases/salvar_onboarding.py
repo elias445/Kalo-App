@@ -4,6 +4,7 @@ from app.models.usuario import UsuarioModel
 from app.schemas.usuario import UsuarioOnboarding
 
 
+# Salva os dados biométricos no usuário
 def salvar_onboarding(db: Session, usuario_id: str, dados: UsuarioOnboarding) -> UsuarioModel:
     usuario = db.query(UsuarioModel).filter(UsuarioModel.id == usuario_id).first()
     if not usuario:

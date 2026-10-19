@@ -5,6 +5,7 @@ from app.schemas.usuario import UsuarioCreate
 from app.security import gerar_hash_senha
 
 
+# Cria a conta (e-mail único e senha com hash)
 def cadastrar_usuario(db: Session, usuario: UsuarioCreate) -> UsuarioModel:
     if db.query(UsuarioModel).filter(UsuarioModel.email == usuario.email).first():
         raise HTTPException(status_code=400, detail="Este e-mail já está em uso.")

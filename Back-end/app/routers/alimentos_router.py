@@ -5,9 +5,11 @@ from app.database import get_db
 from app.schemas.alimento import BuscaAlimentosResponse
 from app.use_cases.buscar_alimentos import buscar_na_taco, buscar_industrializados
 
+# Agrupa as rotas sob /alimentos
 router = APIRouter(prefix="/alimentos", tags=["Alimentos"])
 
 
+# GET /alimentos/buscar: pesquisa na TACO e no Open Food Facts
 @router.get("/buscar", response_model=BuscaAlimentosResponse)
 def buscar_alimentos(
     q: str = Query(..., min_length=2, description="Nome do alimento (ex.: arroz, achocolatado)"),
@@ -18,9 +20,11 @@ def buscar_alimentos(
     resultados = []
     avisos = []
 
+    # Busca na TACO (nosso banco)
     if fonte in ("todos", "taco"):
         resultados += buscar_na_taco(db, q, limite)
 
+    # Busca em industrializados e se a API falhar, devolve só um aviso
     if fonte in ("todos", "industrializados"):
         try:
             resultados += buscar_industrializados(q, limite)

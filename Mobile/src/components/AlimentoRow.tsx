@@ -4,6 +4,7 @@ import { Plus, Check } from 'lucide-react-native';
 import { MiniTile } from './UI';
 import { colors } from '../theme';
 
+// Marca um alimento como adicionado por 1,5 s (mostra o check verde)
 export function useAdicionado() {
   const [nome, setNome] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -19,6 +20,7 @@ export function useAdicionado() {
   return [nome, marcar] as const;
 }
 
+// Propriedades da linha
 type Props = {
   nome: string;
   legenda?: string;
@@ -30,6 +32,7 @@ type Props = {
   onPress?: () => void;
 };
 
+// Linha de alimento com campo de gramas e botão de adicionar
 export default function AlimentoRow({ nome, legenda, kcal, gramas, onGramasChange, onAdd, adicionado, onPress }: Props) {
   return (
     <View

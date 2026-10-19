@@ -5,16 +5,20 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.models.alimento import AlimentoModel
 
+# Arquivo com os alimentos da TACO
 ARQUIVO_TACO = Path(__file__).resolve().parent.parent / "data" / "taco.json"
 
 
+# Remove acentos e deixa em minúsculas
 def normalizar(texto: str) -> str:
     sem_acento = unicodedata.normalize("NFD", texto)
     sem_acento = "".join(c for c in sem_acento if unicodedata.category(c) != "Mn")
     return sem_acento.lower().strip()
 
 
+# Popula a tabela de alimentos com a TACO na primeira execução
 def carregar_taco_se_vazio(db: Session) -> int:
+    # Garante a coluna de micronutrientes em bancos antigos
     db.execute(text("ALTER TABLE alimentos ADD COLUMN IF NOT EXISTS nutrientes JSONB"))
     db.commit()
 
@@ -40,6 +44,7 @@ def carregar_taco_se_vazio(db: Session) -> int:
         db.commit()
         return len(itens)
     
+    # Banco já populado: só completa os micronutrientes que faltam
     por_nome = {item["nome"].strip(): item.get("nutrientes") or {} for item in itens}
     pendentes = db.query(AlimentoModel).filter(AlimentoModel.nutrientes.is_(None)).all()
     for alimento in pendentes:

@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from app.database import Base
 
+# Tabela dos treinos realizados pelo usuário
 class HistoricoTreino(Base):
     __tablename__ = "historico_treinos"
 

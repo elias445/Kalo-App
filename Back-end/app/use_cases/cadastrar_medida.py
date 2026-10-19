@@ -3,6 +3,7 @@ from app.models.historico_medidas import HistoricoMedidasModel
 from app.models.usuario import UsuarioModel
 from app.schemas.historico_medidas import HistoricoMedidasCreate
 
+# Salva o peso no histórico e atualiza o peso atual do usuário
 def cadastrar_medida(db: Session, medida: HistoricoMedidasCreate):
     db_medida = HistoricoMedidasModel(**medida.model_dump())
     db.add(db_medida)

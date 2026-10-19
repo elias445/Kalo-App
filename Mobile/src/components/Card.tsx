@@ -4,6 +4,7 @@ import { colors, glow } from '../theme';
 
 type Props = ViewProps & { className?: string; highlight?: boolean };
 
+// Cartão padrão do app
 export default function Card({ className = '', highlight = false, style, children, ...rest }: Props) {
   return (
     <View

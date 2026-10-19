@@ -1,9 +1,10 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Arquivos onde o NativeWind procura as classes
   content: ["./App.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      // Cores do tema (iguais às de src/theme.ts)
       colors: {
         ink: '#07090E',
         surface: '#0E131B',

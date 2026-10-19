@@ -11,6 +11,7 @@ import { useApp } from '../context/AppContext';
 import { DIAS, diaDeHoje, estimarTreino } from '../data/treino';
 import { colors, gradients, glow } from '../theme';
 
+// Pílula com ícone e texto
 function Info({ icon, texto }: { icon: React.ReactNode; texto: string }) {
   return (
     <View
@@ -23,6 +24,7 @@ function Info({ icon, texto }: { icon: React.ReactNode; texto: string }) {
   );
 }
 
+// Tela da aba Treino: cronograma semanal
 export default function CronogramaTreinoScreen() {
   const navigation = useNavigation<any>();
   const { plano } = useApp();
@@ -33,8 +35,8 @@ export default function CronogramaTreinoScreen() {
   const descanso = treino.exercicios.length === 0;
   const estimativa = estimarTreino(treino.exercicios);
 
-  // Número do dia do mês de cada dia da semana atual (domingo a sábado)
   const agora = new Date();
+  // Dia do mês de cada dia da semana atual
   const datas = DIAS.map((_, i) => {
     const d = new Date(agora);
     d.setDate(agora.getDate() - agora.getDay() + i);

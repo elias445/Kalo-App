@@ -12,6 +12,7 @@ import { useApp } from '../context/AppContext';
 import { useRefeicoes } from '../context/RefeicoesContext';
 import { colors } from '../theme';
 
+// Tela com os alimentos de uma refeição
 export default function DetalheRefeicaoScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -21,6 +22,7 @@ export default function DetalheRefeicaoScreen() {
   const { metas } = useApp();
   const { refeicoes, removerAlimento } = useRefeicoes();
 
+  // Alimentos e totais da refeição
   const itens = refeicoes[refeicao] ?? [];
   const total = itens.reduce((soma, item) => soma + item.kcal, 0);
   const gramasTotais = itens.reduce((soma, item) => soma + item.gramas, 0);

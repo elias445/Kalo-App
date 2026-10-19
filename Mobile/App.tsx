@@ -29,9 +29,12 @@ import EditarExercicioScreen from './src/screens/EditarExercicioScreen';
 import TreinoDoDiaScreen from './src/screens/TreinoDoDiaScreen';
 import { RefeicoesProvider } from './src/context/RefeicoesContext';
 
+// Navegador em pilha (telas empilhadas)
 const Stack = createNativeStackNavigator();
+// Navegador de abas (barra inferior)
 const Tab = createBottomTabNavigator();
 
+// Tema escuro do Kalo para a navegação
 const temaKalo = {
   ...DarkTheme,
   colors: {
@@ -43,12 +46,14 @@ const temaKalo = {
   },
 };
 
+// Opções comuns das telas: sem cabeçalho e transição suave
 const opcoesStack = {
   headerShown: false,
   contentStyle: { backgroundColor: colors.ink },
   animation: 'fade' as const,
 };
 
+// Telas da aba Dieta
 function DiarioStack() {
   return (
     <Stack.Navigator screenOptions={opcoesStack}>
@@ -60,6 +65,7 @@ function DiarioStack() {
   );
 }
 
+// Abas principais do app
 function AppTabs() {
   return (
     <Tab.Navigator
@@ -75,12 +81,14 @@ function AppTabs() {
   );
 }
 
+// Raiz do app: estados globais e navegação
 export default function App() {
   return (
     <AppProvider>
       <RefeicoesProvider>
       <StatusBar style="light" />
       <NavigationContainer theme={temaKalo}>
+        {/* Fluxo principal: login, onboarding e app */}
         <Stack.Navigator screenOptions={opcoesStack} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Cadastro" component={CadastroScreen} />

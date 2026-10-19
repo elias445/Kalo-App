@@ -10,9 +10,11 @@ class TreinoPlanejadoBase(BaseModel):
     series_planejadas: str
     ordem: int
 
+# Dados recebidos ao criar um exercício planejado
 class TreinoPlanejadoCreate(TreinoPlanejadoBase):
     usuario_id: UUID
 
+# Dados devolvidos ao app
 class TreinoPlanejadoResponse(TreinoPlanejadoBase):
     id: UUID
     usuario_id: UUID

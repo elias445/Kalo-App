@@ -12,6 +12,7 @@ import { useApp } from '../context/AppContext';
 import { diaDeHoje, estimarTreino, formatarCarga } from '../data/treino';
 import { colors } from '../theme';
 
+// Tela do treino do dia com checklist de exercícios
 export default function TreinoDoDiaScreen() {
   const navigation = useNavigation();
   const route = useRoute<any>();
@@ -22,14 +23,17 @@ export default function TreinoDoDiaScreen() {
   const exercicios = treino.exercicios;
   const estimativa = estimarTreino(exercicios);
 
+  // Ids dos exercícios marcados como feitos
   const [concluidos, setConcluidos] = useState<number[]>([]);
 
+  // Marca ou desmarca um exercício
   const alternar = (id: number) =>
     setConcluidos((atual) => (atual.includes(id) ? atual.filter((item) => item !== id) : [...atual, id]));
 
   const total = exercicios.length;
   const progresso = total ? concluidos.length / total : 0;
 
+  // Confirma a conclusão (avisa se o treino estiver incompleto)
   const finalizar = () => {
     if (concluidos.length < total) {
       Alert.alert('Treino incompleto', `Você concluiu ${concluidos.length} de ${total} exercícios. Deseja finalizar mesmo assim?`, [

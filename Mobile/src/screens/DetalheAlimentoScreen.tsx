@@ -14,8 +14,10 @@ import { registrarRecente } from '../services/recentes';
 import { AlimentoBusca, calcularKcal, porcao } from '../data/alimentos';
 import { colors } from '../theme';
 
+// Unidades de medida possíveis
 type Unidade = 'g' | 'porcao' | 'embalagem';
 
+// Nutrientes extras mostrados quando o alimento os possui
 const EXTRAS: { chave: string; rotulo: string; unidade: 'g' | 'mg'; recuo?: boolean }[] = [
   { chave: 'gordura_saturada', rotulo: 'Gorduras saturadas', unidade: 'g', recuo: true },
   { chave: 'gordura_monoinsaturada', rotulo: 'Gorduras monoinsaturadas', unidade: 'g', recuo: true },
@@ -33,11 +35,13 @@ const EXTRAS: { chave: string; rotulo: string; unidade: 'g' | 'mg'; recuo?: bool
   { chave: 'vitamina_c', rotulo: 'Vitamina C', unidade: 'mg' },
 ];
 
+// Arredonda e usa vírgula
 const formatar = (n: number) => {
   const arredondado = Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 10) / 10;
   return String(arredondado).replace('.', ',');
 };
 
+// Tela de detalhe do alimento: quantidade, macros e tabela nutricional
 export default function DetalheAlimentoScreen() {
   const navigation = useNavigation();
   const route = useRoute<any>();
@@ -51,6 +55,7 @@ export default function DetalheAlimentoScreen() {
   const [quantidade, setQuantidade] = useState('100');
   const [unidade, setUnidade] = useState<Unidade>('g');
 
+  // Unidades disponíveis (porção e embalagem só se o produto tiver)
   const unidades: { chave: Unidade; rotulo: string; gramasPorUnidade: number }[] = [
     { chave: 'g', rotulo: 'Gramas (g)', gramasPorUnidade: 1 },
   ];
@@ -69,16 +74,19 @@ export default function DetalheAlimentoScreen() {
   const origem = alimento.fonte === 'TACO' ? 'TACO' : alimento.categoria ?? 'Industrializado';
   const percentualMeta = metas.calorias ? Math.round((kcal / metas.calorias) * 100) : 0;
 
+  // Troca a unidade e ajusta a quantidade inicial
   const trocarUnidade = (nova: Unidade) => {
     setUnidade(nova);
     setQuantidade(nova === 'g' ? '100' : '1');
   };
 
+  // Mantém só os nutrientes que o alimento possui
   const nutrientesExtras = EXTRAS.map((extra) => {
     const valor100 = extra.chave === 'fibra' ? alimento.nutrientes?.fibra ?? (alimento.fibra_100g || undefined) : alimento.nutrientes?.[extra.chave];
     return { ...extra, valor100 };
   }).filter((extra) => typeof extra.valor100 === 'number');
 
+  // Salva no diário e nos recentes
   const adicionar = async () => {
     if (!gramas || gramas > 10000) {
       Alert.alert('Quantidade inválida', 'Informe uma quantidade maior que zero.');
@@ -89,6 +97,7 @@ export default function DetalheAlimentoScreen() {
     navigation.goBack();
   };
 
+  // Calorias e macros da quantidade escolhida
   const principais = [
     { rotulo: 'Calorias', valor: `${kcal}`, sufixo: ` kcal (${percentualMeta}%)` },
     { rotulo: 'Carboidratos', valor: formatar(porcao(alimento.carboidrato_100g, gramas)), sufixo: ' g' },

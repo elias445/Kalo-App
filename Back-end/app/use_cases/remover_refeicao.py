@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.diario_alimentos import DiarioAlimentosModel
 
 
+# Remove um item do diário
 def remover_refeicao(db: Session, refeicao_id, usuario_id_logado: str) -> None:
     refeicao = db.query(DiarioAlimentosModel).filter(DiarioAlimentosModel.id == refeicao_id).first()
     if not refeicao:

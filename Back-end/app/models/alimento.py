@@ -4,12 +4,13 @@ import uuid
 from app.database import Base
 
 
+# Tabela de alimentos (base TACO)
 class AlimentoModel(Base):
     __tablename__ = "alimentos"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome = Column(String, nullable=False)
-    # nome sem acentos e em minúsculas, usado na busca
+    # Nome sem acento e em minúsculas, usado na busca
     nome_busca = Column(String, nullable=False, index=True)
     categoria = Column(String, nullable=False)
     fonte = Column(String, nullable=False, default="TACO")
@@ -18,4 +19,5 @@ class AlimentoModel(Base):
     carboidrato_100g = Column(Float, nullable=False)
     gordura_100g = Column(Float, nullable=False)
     fibra_100g = Column(Float, nullable=False, default=0)
+    # Micronutrientes extras guardados em JSON
     nutrientes = Column(JSONB, nullable=True)

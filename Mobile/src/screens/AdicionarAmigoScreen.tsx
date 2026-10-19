@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, Share } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { AtSign, Check, Send, Share2, UserPlus } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
@@ -12,14 +11,16 @@ import { useApp } from '../context/AppContext';
 import { SUGESTOES } from '../data/comunidade';
 import { colors } from '../theme';
 
+// Tela para convidar amigos por código ou @usuário
 export default function AdicionarAmigoScreen() {
-  const navigation = useNavigation();
   const { perfil, amigos, adicionarAmigo } = useApp();
   const [usuario, setUsuario] = useState('');
 
+  // Código de convite do usuário
   const codigo = `${perfil.nome.trim().split(' ')[0].toUpperCase().slice(0, 5)}-4821`;
   const jaConvidado = (u: string) => amigos.some((a) => a.usuario === u);
 
+  // Abre o menu de compartilhar do celular
   const compartilhar = async () => {
     try {
       await Share.share({ message: `Vem treinar comigo no Kalo! Use meu código ${codigo} para entrar no meu desafio.` });
@@ -28,6 +29,7 @@ export default function AdicionarAmigoScreen() {
     }
   };
 
+  // Valida o @usuário e adiciona o convite
   const enviar = () => {
     const limpo = usuario.trim().replace(/^@/, '').toLowerCase();
     if (!limpo) {

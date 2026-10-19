@@ -13,8 +13,10 @@ import { carregarRecentes, registrarRecente, salvarRecentes, chaveDoAlimento } f
 import { AlimentoBusca, calcularKcal } from '../data/alimentos';
 import { colors } from '../theme';
 
+// Filtros da busca
 type Fonte = 'todos' | 'taco' | 'industrializados';
 
+// Rótulo de cada filtro
 const FONTES: { chave: Fonte; rotulo: string }[] = [
   { chave: 'todos', rotulo: 'Todos' },
   { chave: 'taco', rotulo: 'Alimentos' },
@@ -22,8 +24,10 @@ const FONTES: { chave: Fonte; rotulo: string }[] = [
 ];
 
 const chaveDe = chaveDoAlimento;
+// Arredonda para 1 casa e usa vírgula
 const formatar = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
 
+// Tela de busca de alimentos (TACO e industrializados)
 export default function PesquisaAlimentosScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -45,12 +49,14 @@ export default function PesquisaAlimentosScreen() {
 
   const termo = busca.trim();
 
+  // Carrega os pesquisados recentemente ao entrar na tela
   useFocusEffect(
     useCallback(() => {
       carregarRecentes(usuarioId).then(setRecentes);
     }, [usuarioId])
   );
 
+  // Busca no servidor 400 ms depois de parar de digitar e ignora respostas antigas
   useEffect(() => {
     if (termo.length < 2) {
       setResultados([]);
@@ -87,6 +93,7 @@ export default function PesquisaAlimentosScreen() {
     };
   }, [termo, fonte]);
 
+  // Adiciona o alimento à refeição com a quantidade digitada
   const adicionar = (alimento: AlimentoBusca) => {
     const chave = chaveDe(alimento);
     const g = Number(String(gramas[chave] ?? '100').replace(',', '.'));
@@ -99,6 +106,7 @@ export default function PesquisaAlimentosScreen() {
     registrarRecente(usuarioId, alimento).then(setRecentes);
   };
 
+  // Monta a linha de um alimento
   const renderLinha = (alimento: AlimentoBusca) => {
     const chave = chaveDe(alimento);
     const g = gramas[chave] ?? '100';

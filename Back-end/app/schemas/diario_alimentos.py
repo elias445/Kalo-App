@@ -11,9 +11,11 @@ class DiarioAlimentosBase(BaseModel):
     proteinas: float
     gorduras: float
 
+# Dados recebidos ao registrar um alimento
 class DiarioAlimentosCreate(DiarioAlimentosBase):
     usuario_id: UUID4
 
+# Dados devolvidos ao app
 class DiarioAlimentosResponse(DiarioAlimentosBase):
     id: UUID4
     usuario_id: UUID4

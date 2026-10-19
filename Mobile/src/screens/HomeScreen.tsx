@@ -12,15 +12,19 @@ import { diaDeHoje, estimarTreino } from '../data/treino';
 import { colors } from '../theme';
 import { configurarLembretesDiarios, checarNotificacoesNaTela} from '../services/notifications';
 
+// Nomes de dias e meses para o cabeçalho
 const SEMANA = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
+// Formata número com ponto de milhar
 const milhar = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
+// Tela inicial: calorias, macros e treino do dia
 export default function HomeScreen() {
   const { perfil, metas, plano } = useApp();
   const { totalConsumido, totaisMacros } = useRefeicoes();
 
+  // Agenda os lembretes de refeição ao abrir a tela
   useEffect(() => {
     configurarLembretesDiarios();
   }, []);
@@ -30,20 +34,24 @@ export default function HomeScreen() {
   
   const primeiroNome = perfil?.nome ? perfil.nome.trim().split(' ')[0] : 'Atleta';
 
+  // Calorias consumidas, restantes e progresso do dia
   const consumidoReal = totalConsumido || 0;
   const metaCalorias = metas?.calorias || 1; 
   const restantes = metaCalorias - consumidoReal;
   const progresso = consumidoReal / metaCalorias;
 
+  // Consumo real de cada macro contra a meta
   const macros = [
     { nome: 'Carboidratos', meta: metas?.carboidrato || 0, atual: Math.round(totaisMacros?.carboidratos || 0), Icone: Wheat },
     { nome: 'Proteínas', meta: metas?.proteina || 0, atual: Math.round(totaisMacros?.proteinas || 0), Icone: Beef },
     { nome: 'Gorduras', meta: metas?.gordura || 0, atual: Math.round(totaisMacros?.gorduras || 0), Icone: Droplet },
   ];
 
+  // Treino de hoje (ou dia de descanso)
   const treino = plano && plano[diaDeHoje()] ? plano[diaDeHoje()] : { titulo: 'Descanso', exercicios: [] };
   const descanso = treino?.exercicios?.length === 0;
   const estimativa = estimarTreino(treino?.exercicios || []);
+  // Mostra se há lembretes na bandeja do celular
   const handlePressionarSino = async () => {
   
     const notificacoes = await checarNotificacoesNaTela();
