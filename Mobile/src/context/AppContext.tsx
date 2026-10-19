@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { apiFetch } from '../services/api';
 import { ALIMENTOS, calcularKcal } from '../data/alimentos';
 import { PLANO_PADRAO, DiaTreino, Exercicio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
@@ -36,6 +37,12 @@ type AppState = {
 };
 
 const AppContext = createContext<AppState | null>(null);
+
+// A data do servidor vem em UTC sem fuso (ex.: 2026-10-19T14:03:12); vira "19/10" no horário local
+const rotuloDeData = (iso: string) => {
+  const data = new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`);
+  return `${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}`;
+};
 
 const rotuloHoje = () => {
   const hoje = new Date();
@@ -106,6 +113,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('@kalo_token', novoToken);
     await AsyncStorage.setItem('@kalo_id', usuario.id);
     await AsyncStorage.setItem('@kalo_perfil', JSON.stringify(novoPerfil));
+
+    // Histórico de peso salvo no servidor, que alimenta o gráfico do perfil
+    try {
+      const medidas = await apiFetch(`/medidas/usuario/${usuario.id}`);
+      if (Array.isArray(medidas) && medidas.length > 0) {
+        setPesos(medidas.map((m: any) => ({ value: m.peso_kg, label: rotuloDeData(m.data_registro) })));
+      }
+    } catch (erro) {
+      console.error('Erro ao carregar o histórico de peso:', erro);
+    }
   };
 
   const encerrarSessao = async () => {

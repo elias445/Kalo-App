@@ -7,6 +7,7 @@ import HeroCard from '../components/HeroCard';
 import { GradientButton } from '../components/Buttons';
 import { BackButton, Badge, IconTile, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { apiFetch } from '../services/api';
 import { colors } from '../theme';
 
 const paraNumero = (texto: string) => parseFloat(texto.replace(',', '.'));
@@ -14,8 +15,9 @@ const formatar = (n: number) => n.toFixed(1).replace('.', ',');
 
 export default function RegistrarPesoScreen() {
   const navigation = useNavigation();
-  const { pesoAtual, registrarPeso } = useApp();
+  const { pesoAtual, registrarPeso, usuarioId } = useApp();
   const [peso, setPeso] = useState(formatar(pesoAtual));
+  const [salvando, setSalvando] = useState(false);
 
   const hoje = new Date();
   const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
@@ -29,13 +31,30 @@ export default function RegistrarPesoScreen() {
     setPeso(formatar(Math.max(20, Math.round((base + delta) * 10) / 10)));
   };
 
-  const salvar = () => {
+  const salvar = async () => {
+    if (salvando) return;
     if (!valido) {
       Alert.alert('Peso inválido', 'Informe um peso entre 20 e 400 kg.');
       return;
     }
-    registrarPeso(Math.round(valor * 10) / 10);
-    navigation.goBack();
+
+    const pesoFinal = Math.round(valor * 10) / 10;
+    setSalvando(true);
+    try {
+      const resposta = await apiFetch('/medidas/', {
+        method: 'POST',
+        body: JSON.stringify({ usuario_id: usuarioId, peso_kg: pesoFinal }),
+      });
+      if (!resposta?.id) throw new Error('O servidor não confirmou o registro');
+
+      registrarPeso(pesoFinal);
+      navigation.goBack();
+    } catch (erro) {
+      console.error('Erro ao salvar o peso:', erro);
+      Alert.alert('Erro', 'Não foi possível salvar o peso no servidor. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (

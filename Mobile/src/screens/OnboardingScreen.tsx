@@ -15,7 +15,7 @@ import { apiFetch } from '../services/api';
 
 export default function OnboardingScreen() {
   const navigation = useNavigation();
-  const { perfil, pesoAtual, atualizarPerfil, registrarPeso } = useApp();
+  const { perfil, pesoAtual, atualizarPerfil, registrarPeso, usuarioId } = useApp();
 
   const [sexo, setSexo] = useState(perfil.sexo);
   const [idade, setIdade] = useState(perfil.idade);
@@ -43,6 +43,14 @@ export default function OnboardingScreen() {
           objetivo: objetivo
         })
       });
+
+      // O peso informado no onboarding é o primeiro registro do histórico de peso
+      if (usuarioId) {
+        await apiFetch('/medidas/', {
+          method: 'POST',
+          body: JSON.stringify({ usuario_id: usuarioId, peso_kg: pesoNumero }),
+        });
+      }
 
       atualizarPerfil({ sexo, idade, altura, objetivo });
       if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
