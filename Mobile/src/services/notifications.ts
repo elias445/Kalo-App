@@ -36,8 +36,11 @@ export async function configurarLembretesDiarios() {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   await agendarRefeicao('Café da Manhã', 8, 0, 'Já tomou seu café? Anote o que consumiu! ☕');
+  await agendarRefeicao('Lanche da Manhã', 10, 30, 'Pausa para um lanche leve! Mantenha a energia. 🍎');
   await agendarRefeicao('Almoço', 12, 30, 'Hora do almoço! Não esqueça de registrar no diário. 🥗');
-  await agendarRefeicao('Jantar', 1, 25, 'O que tivemos para o jantar? Mantenha o foco! 🍽️'); // Corrigido o 01 para 1
+  await agendarRefeicao('Lanche da Tarde', 16, 0, 'Hora do lanche da tarde! O que temos para agora? 🥪');
+  await agendarRefeicao('Jantar', 19, 30, 'O que tivemos para o jantar? Mantenha o foco! 🍽️'); 
+  await agendarRefeicao('Ceia', 22, 0, 'Última refeição do dia. Hora de relaxar! 🥛');
 }
 
 async function agendarRefeicao(titulo: string, hora: number, minuto: number, corpo: string) {
@@ -52,6 +55,9 @@ async function agendarRefeicao(titulo: string, hora: number, minuto: number, cor
       minute: minuto,
       repeats: true,
       channelId: 'default'
-    },
-  });
+    },});
+}
+export async function checarNotificacoesNaTela() {
+  const notificacoesAtivas = await Notifications.getPresentedNotificationsAsync();
+  return notificacoesAtivas;
 }

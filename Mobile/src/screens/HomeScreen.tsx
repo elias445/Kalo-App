@@ -10,7 +10,7 @@ import { useApp } from '../context/AppContext';
 import { useRefeicoes } from '../context/RefeicoesContext';
 import { diaDeHoje, estimarTreino } from '../data/treino';
 import { colors } from '../theme';
-import { configurarLembretesDiarios } from '../services/notifications';
+import { configurarLembretesDiarios, checarNotificacoesNaTela} from '../services/notifications';
 
 const SEMANA = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -44,6 +44,19 @@ export default function HomeScreen() {
   const treino = plano && plano[diaDeHoje()] ? plano[diaDeHoje()] : { titulo: 'Descanso', exercicios: [] };
   const descanso = treino?.exercicios?.length === 0;
   const estimativa = estimarTreino(treino?.exercicios || []);
+  const handlePressionarSino = async () => {
+  
+    const notificacoes = await checarNotificacoesNaTela();
+    
+    if (notificacoes.length > 0) {
+      Alert.alert(
+        "Novas Notificações 🔔", 
+        `Você tem ${notificacoes.length} lembrete(s) aguardando você! Vá na central de notificações do celular para ver.`
+      );
+    } else {
+      Alert.alert("Tudo em dia!", "Você não tem novas notificações no momento.");
+    }
+  };
 
   return (
     <Screen tabbed>
@@ -52,7 +65,7 @@ export default function HomeScreen() {
           <SectionLabel dot>{dataTexto}</SectionLabel>
           <Text className="text-white text-3xl font-extrabold mt-2">Olá, {primeiroNome}!</Text>
         </View>
-        <IconButton onPress={() => Alert.alert('Notificações', 'Você não tem notificações novas.')}>
+        <IconButton onPress={handlePressionarSino}>
           <Bell color={colors.muted} size={20} strokeWidth={2} />
         </IconButton>
       </View>
