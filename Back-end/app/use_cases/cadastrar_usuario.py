@@ -1,22 +1,22 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 from app.models.usuario import UsuarioModel
 from app.schemas.usuario import UsuarioCreate
+from app.security import gerar_hash_senha
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def cadastrar_usuario(db: Session, usuario: UsuarioCreate):
-    senha_criptografada = pwd_context.hash(usuario.senha)
-    
-    db_usuario = UsuarioModel(
+def cadastrar_usuario(db: Session, usuario: UsuarioCreate) -> UsuarioModel:
+    if db.query(UsuarioModel).filter(UsuarioModel.email == usuario.email).first():
+        raise HTTPException(status_code=400, detail="Este e-mail já está em uso.")
+
+    novo_usuario = UsuarioModel(
         nome=usuario.nome,
         email=usuario.email,
-        senha_hash=senha_criptografada,
+        senha_hash=gerar_hash_senha(usuario.senha),
         objetivo=usuario.objetivo,
-        nivel_experiencia=usuario.nivel_experiencia
+        nivel_experiencia=usuario.nivel_experiencia,
     )
-    
-    db.add(db_usuario)
+    db.add(novo_usuario)
     db.commit()
-    db.refresh(db_usuario)
-    return db_usuario
+    db.refresh(novo_usuario)
+    return novo_usuario
