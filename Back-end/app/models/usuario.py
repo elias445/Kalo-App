@@ -22,6 +22,10 @@ class UsuarioModel(Base):
     dias_treino = Column(Integer, nullable=True)
     # Dias da semana escolhidos para treinar, separados por vírgula (ex.: Seg,Qua,Sex)
     dias_preferidos = Column(String, nullable=True)
+    # @usuario escolhido no cadastro (único, em minúsculas, sem o @)
+    usuario = Column(String, unique=True, index=True, nullable=True)
+    # Código curto para os amigos adicionarem o usuário
+    codigo_convite = Column(String, unique=True, index=True, nullable=True)
 
     # Ligações com o histórico de peso e o diário de alimentos
     medidas = relationship("HistoricoMedidasModel", back_populates="usuario")

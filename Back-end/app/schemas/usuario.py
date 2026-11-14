@@ -1,6 +1,16 @@
+import re
 from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator
 from typing import List, Literal, Optional
 from app.schemas.treino_planejado import DiaSemana
+
+# @usuario: de 3 a 20 caracteres (letras minúsculas, números, ponto e sublinhado), começando por letra ou número
+PADRAO_USUARIO = re.compile(r"^[a-z0-9][a-z0-9._]{2,19}$")
+
+
+# Tira o @ e os espaços e deixa em minúsculas (ex.: " @Joao.Vitor " vira "joao.vitor")
+def normalizar_usuario(texto: str) -> str:
+    return texto.strip().lstrip("@").strip().lower()
+
 
 class UsuarioBase(BaseModel):
     nome: str
@@ -12,6 +22,15 @@ class UsuarioBase(BaseModel):
 # Dados recebidos no cadastro
 class UsuarioCreate(UsuarioBase):
     senha: str
+    usuario: str
+
+    @field_validator("usuario")
+    @classmethod
+    def usuario_valido(cls, valor):
+        limpo = normalizar_usuario(valor)
+        if not PADRAO_USUARIO.match(limpo):
+            raise ValueError("Use de 3 a 20 caracteres: letras, números, ponto ou sublinhado")
+        return limpo
 
 
 # Dados do usuário devolvidos ao app

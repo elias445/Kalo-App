@@ -10,6 +10,8 @@ def dados_do_usuario(usuario: UsuarioModel) -> dict:
         "id": usuario.id,
         "nome": usuario.nome,
         "email": usuario.email,
+        "usuario": usuario.usuario,
+        "codigo_convite": usuario.codigo_convite,
         "sexo": usuario.sexo,
         "idade": usuario.idade,
         "altura": usuario.altura,

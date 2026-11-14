@@ -8,9 +8,16 @@ from app.use_cases.editar_perfil import editar_perfil
 from app.use_cases.realizar_login import realizar_login
 from app.use_cases.salvar_onboarding import salvar_onboarding
 from app.use_cases.sessao import iniciar_sessao
+from app.use_cases.verificar_usuario_disponivel import verificar_usuario_disponivel
 
 # Agrupa as rotas sob /usuarios
 router = APIRouter(prefix="/usuarios", tags=["Usuários"])
+
+
+# GET /usuarios/disponivel?usuario=: confere se o @usuario é válido e está livre (sem login, usado no cadastro)
+@router.get("/disponivel")
+def usuario_disponivel(usuario: str, db: Session = Depends(get_db)):
+    return verificar_usuario_disponivel(db=db, usuario=usuario)
 
 
 # POST /usuarios/cadastro: cria a conta e já inicia a sessão
