@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Text, View, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { User, Mail, Lock, ArrowRight } from 'lucide-react-native';
@@ -24,9 +24,17 @@ const ROTULOS = ['', 'Fraca', 'Razoável', 'Boa', 'Forte'];
 // Cor de cada nível de força da senha
 const CORES = ['', colors.danger, '#F59E0B', colors.cyan, colors.ok];
 
+// Situação do @usuário digitado
+type SituacaoUsuario = 'vazio' | 'curto' | 'verificando' | 'livre' | 'ocupado' | 'erro';
+
+// Deixa só o que vale num @usuário: minúsculas, números, ponto e sublinhado (o @ já está fixo no campo)
+const limparUsuario = (texto: string) => texto.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
+
 // Tela de cadastro
 export default function CadastroScreen() {
   const [nome, setNome] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [situacaoUsuario, setSituacaoUsuario] = useState<SituacaoUsuario>('vazio');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -35,10 +43,47 @@ export default function CadastroScreen() {
 
   const forca = senha ? avaliarSenha(senha) : 0;
 
+  // Confere com o servidor, enquanto a pessoa digita, se o @usuário está livre
+  useEffect(() => {
+    if (!usuario) return setSituacaoUsuario('vazio');
+    if (usuario.length < 3) return setSituacaoUsuario('curto');
+    setSituacaoUsuario('verificando');
+    let atual = true;
+    const espera = setTimeout(async () => {
+      try {
+        const API_URL = process.env.EXPO_PUBLIC_API_URL;
+        const resposta = await fetch(`${API_URL}/usuarios/disponivel?usuario=${encodeURIComponent(usuario)}`);
+        const dados = await resposta.json();
+        if (atual) setSituacaoUsuario(dados.disponivel ? 'livre' : 'ocupado');
+      } catch {
+        if (atual) setSituacaoUsuario('erro');
+      }
+    }, 400);
+    return () => { atual = false; clearTimeout(espera); };
+  }, [usuario]);
+
+  // Mensagem e cor embaixo do campo de usuário
+  const aviso = {
+    vazio: { texto: 'De 3 a 20 caracteres: letras, números, ponto ou sublinhado. Não dá para trocar depois.', cor: colors.dim },
+    curto: { texto: 'Use pelo menos 3 caracteres.', cor: colors.dim },
+    verificando: { texto: 'Verificando...', cor: colors.dim },
+    livre: { texto: 'Esse usuário está disponível.', cor: colors.ok },
+    ocupado: { texto: 'Esse usuário já está em uso. Tente outro.', cor: colors.danger },
+    erro: { texto: 'Não foi possível verificar agora. Confira a conexão.', cor: colors.danger },
+  }[situacaoUsuario];
+
   // Valida os dados e cria a conta pela API
   const handleCadastro = async () => {
-    if (!nome.trim() || !email.trim() || !senha) {
+    if (!nome.trim() || !usuario || !email.trim() || !senha) {
       Alert.alert('Campos obrigatórios', 'Preencha todos os campos para continuar.');
+      return;
+    }
+    if (usuario.length < 3) {
+      Alert.alert('Usuário inválido', 'Escolha um usuário com pelo menos 3 caracteres.');
+      return;
+    }
+    if (situacaoUsuario === 'ocupado') {
+      Alert.alert('Usuário em uso', 'Esse @usuário já existe. Escolha outro.');
       return;
     }
     if (!email.includes('@')) {
@@ -61,6 +106,7 @@ export default function CadastroScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nome: nome.trim(),
+          usuario,
           email: email.toLowerCase().trim(),
           senha: senha
         })
@@ -95,6 +141,20 @@ export default function CadastroScreen() {
 
       <View style={{ gap: 18 }}>
         <Field label="Nome" icon={User} placeholder="Seu nome" value={nome} onChangeText={setNome} />
+
+        <View>
+          <Field
+            label="Usuário"
+            prefixo="@"
+            placeholder="seu.usuario"
+            value={usuario}
+            onChangeText={(texto) => setUsuario(limparUsuario(texto))}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text className="text-xs mt-2 px-1" style={{ color: aviso.cor }}>{aviso.texto}</Text>
+        </View>
+
         <Field
           label="Email"
           icon={Mail}
