@@ -5,3 +5,5 @@ from .diario_alimentos import DiarioAlimentosModel
 from .treino_planejado import TreinoPlanejado
 from .historico_treino import HistoricoTreino
 from .alimento import AlimentoModel
+from .exercicio import ExercicioModel
+from .sessao_treino import SessaoTreino

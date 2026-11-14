@@ -18,6 +18,10 @@ class UsuarioModel(Base):
     peso_atual = Column(Float, nullable=True)
     objetivo = Column(String, nullable=True)
     nivel_experiencia = Column(String, nullable=True)
+    # Quantos dias por semana o usuário quer treinar
+    dias_treino = Column(Integer, nullable=True)
+    # Dias da semana escolhidos para treinar, separados por vírgula (ex.: Seg,Qua,Sex)
+    dias_preferidos = Column(String, nullable=True)
 
     # Ligações com o histórico de peso e o diário de alimentos
     medidas = relationship("HistoricoMedidasModel", back_populates="usuario")

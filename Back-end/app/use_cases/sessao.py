@@ -15,6 +15,9 @@ def dados_do_usuario(usuario: UsuarioModel) -> dict:
         "altura": usuario.altura,
         "peso_atual": usuario.peso_atual,
         "objetivo": usuario.objetivo,
+        "nivel_experiencia": usuario.nivel_experiencia,
+        "dias_treino": usuario.dias_treino,
+        "dias_preferidos": usuario.dias_preferidos.split(",") if usuario.dias_preferidos else None,
         "onboarding_completo": all(campo is not None for campo in campos_do_onboarding),
     }
 

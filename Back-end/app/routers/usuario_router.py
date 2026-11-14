@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioOnboarding
+from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioOnboarding, UsuarioPerfilUpdate
 from app.security import obter_usuario_logado
 from app.use_cases.cadastrar_usuario import cadastrar_usuario
+from app.use_cases.editar_perfil import editar_perfil
 from app.use_cases.realizar_login import realizar_login
 from app.use_cases.salvar_onboarding import salvar_onboarding
 from app.use_cases.sessao import iniciar_sessao
@@ -35,3 +36,13 @@ def onboarding(
 ):
     salvar_onboarding(db=db, usuario_id=usuario_id_logado, dados=dados)
     return {"status": "Onboarding salvo com sucesso"}
+
+
+# PUT /usuarios/perfil: edita o perfil (exige login) e refaz o plano de treino se o objetivo, nível ou dias mudaram
+@router.put("/perfil")
+def perfil(
+    dados: UsuarioPerfilUpdate,
+    db: Session = Depends(get_db),
+    usuario_id_logado: str = Depends(obter_usuario_logado),
+):
+    return editar_perfil(db=db, usuario_id=usuario_id_logado, dados=dados)
