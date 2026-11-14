@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.atividade import Atividade, Curtida
@@ -6,18 +8,17 @@ from app.use_cases.exigir_usuario import exigir_usuario
 from app.use_cases.ids_amigos import ids_amigos
 
 
-# Feed: o que o usuário e os amigos fizeram, do mais recente ao mais antigo, com as curtidas
-def listar_feed(db: Session, usuario_id, limite: int = 30) -> list:
+# Feed: o que o usuário e os amigos fizeram, do mais recente ao mais antigo, com as curtidas.
+# É paginado: "antes" (horário da última atividade já carregada) pede a página seguinte, até chegar à primeira atividade.
+def listar_feed(db: Session, usuario_id, limite: int = 20, antes: Optional[datetime] = None) -> list:
     exigir_usuario(db, usuario_id)
     autores = ids_amigos(db, usuario_id) | {usuario_id}
 
-    atividades = (
-        db.query(Atividade)
-        .filter(Atividade.usuario_id.in_(autores))
-        .order_by(Atividade.criado_em.desc())
-        .limit(limite)
-        .all()
-    )
+    consulta = db.query(Atividade).filter(Atividade.usuario_id.in_(autores))
+    if antes is not None:
+        # O banco guarda o horário em UTC sem fuso; tira o fuso do que veio do app para comparar
+        consulta = consulta.filter(Atividade.criado_em < antes.replace(tzinfo=None))
+    atividades = consulta.order_by(Atividade.criado_em.desc(), Atividade.id.desc()).limit(limite).all()
     if not atividades:
         return []
 

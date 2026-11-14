@@ -26,6 +26,8 @@ def listar_desafios(db: Session, usuario_id, hoje: Optional[date] = None) -> dic
         item = descrever_desafio(desafio, hoje)
         criador = db.get(UsuarioModel, desafio.criador_id)
         item["criador"] = criador.nome if criador else None
+        # O criador não pode sair do próprio desafio
+        item["sou_criador"] = desafio.criador_id == usuario_id
 
         if participacao.status == "convidado":
             resposta["convites"].append(item)

@@ -1,5 +1,7 @@
 import uuid
-from fastapi import APIRouter, Depends
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from pydantic import UUID4
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -11,10 +13,15 @@ from app.use_cases.listar_feed import listar_feed
 router = APIRouter(prefix="/feed", tags=["Feed"])
 
 
-# GET /feed/: atividades do usuário e dos amigos
+# GET /feed/: atividades do usuário e dos amigos, de 20 em 20 (antes = horário da última já carregada)
 @router.get("/")
-def meu_feed(db: Session = Depends(get_db), usuario_id_logado: str = Depends(obter_usuario_logado)):
-    return listar_feed(db=db, usuario_id=uuid.UUID(usuario_id_logado))
+def meu_feed(
+    limite: int = Query(20, ge=1, le=50),
+    antes: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    usuario_id_logado: str = Depends(obter_usuario_logado),
+):
+    return listar_feed(db=db, usuario_id=uuid.UUID(usuario_id_logado), limite=limite, antes=antes)
 
 
 # POST /feed/{id}/curtir: curte ou descurte uma atividade
