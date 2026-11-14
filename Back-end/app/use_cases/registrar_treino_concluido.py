@@ -5,6 +5,7 @@ from app.models.treino_planejado import TreinoPlanejado
 from app.schemas.sessao_treino import SessaoTreinoCreate
 from app.use_cases.datas_treino import dia_da_semana, validar_data_recente
 from app.use_cases.exigir_usuario import exigir_usuario
+from app.use_cases.publicar_atividades_treino import publicar_atividades_treino
 
 
 # Registra o treino do dia como concluído (um por dia, só em dia com treino planejado)
@@ -41,4 +42,5 @@ def registrar_treino_concluido(db: Session, usuario_id, dados: SessaoTreinoCreat
     db.add(sessao)
     db.commit()
     db.refresh(sessao)
+    publicar_atividades_treino(db, usuario_id, sessao)
     return sessao
