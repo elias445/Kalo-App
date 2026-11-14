@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Check, Dumbbell, Flame, Swords, Target } from 'lucide-react-native';
 import Screen from '../components/Screen';
@@ -8,29 +8,28 @@ import Field from '../components/Field';
 import { GradientButton } from '../components/Buttons';
 import { Avatar, BackButton, Chip, MiniTile, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { DURACOES_DESAFIO, REGRAS_PONTOS } from '../data/comunidade';
 import { colors } from '../theme';
 
-// Durações disponíveis, em dias
-const DURACOES = [7, 14, 30, 60];
-
-// Tela para criar um novo desafio
+// Tela para criar um novo desafio entre amigos
 export default function NovoDesafioScreen() {
   const navigation = useNavigation();
-  const { amigos, criarDesafio } = useApp();
+  const { amizades, criarDesafio } = useApp();
 
-  const amigosAtivos = amigos.filter((a) => a.status === 'ativo');
+  const amigos = amizades.amigos;
 
   const [nome, setNome] = useState('');
   const [duracao, setDuracao] = useState(30);
-  const [selecionados, setSelecionados] = useState<string[]>(amigosAtivos.map((a) => a.id));
-  const [regras, setRegras] = useState({ treino: true, calorias: true, sequencia: true });
+  const [selecionados, setSelecionados] = useState<string[]>(amigos.map((a) => a.id));
+  const [criando, setCriando] = useState(false);
 
   // Marca ou desmarca um participante
   const alternar = (id: string) =>
     setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]));
 
-  // Valida e cria o desafio
-  const criar = () => {
+  // Valida e cria o desafio no servidor (os amigos recebem um convite para aceitar)
+  const criar = async () => {
+    if (criando) return;
     if (!nome.trim()) {
       Alert.alert('Dê um nome ao desafio', 'Informe um nome para o desafio.');
       return;
@@ -39,16 +38,15 @@ export default function NovoDesafioScreen() {
       Alert.alert('Escolha participantes', 'Selecione pelo menos um amigo para competir com você.');
       return;
     }
-    criarDesafio(nome.trim(), duracao, selecionados);
+    setCriando(true);
+    const resultado = await criarDesafio(nome.trim(), duracao, selecionados);
+    setCriando(false);
+    if (!resultado.ok) {
+      Alert.alert('Não foi possível criar', resultado.erro ?? 'Verifique a conexão e tente de novo.');
+      return;
+    }
     navigation.goBack();
   };
-
-  // Regras de pontuação do desafio
-  const linhasRegras = [
-    { chave: 'treino' as const, titulo: 'Treino concluído', pontos: '+50', Icone: Dumbbell },
-    { chave: 'calorias' as const, titulo: 'Meta de calorias cumprida', pontos: '+30', Icone: Target },
-    { chave: 'sequencia' as const, titulo: 'Sequência de treinos', pontos: '+10 por dia', Icone: Flame },
-  ];
 
   return (
     <Screen>
@@ -59,13 +57,13 @@ export default function NovoDesafioScreen() {
       <SectionLabel dot>Comunidade</SectionLabel>
       <Text className="text-white text-3xl font-extrabold mt-2 mb-8">Novo desafio</Text>
 
-      <Field label="Nome do desafio" icon={Swords} placeholder="Ex: Verão em dia" value={nome} onChangeText={setNome} />
+      <Field label="Nome do desafio" icon={Swords} placeholder="Ex: Verão em dia" value={nome} onChangeText={setNome} maxLength={60} />
 
       <View className="mt-7 mb-3">
         <SectionLabel tone="muted">Duração</SectionLabel>
       </View>
       <View className="flex-row" style={{ gap: 10 }}>
-        {DURACOES.map((d) => (
+        {DURACOES_DESAFIO.map((d) => (
           <Chip key={d} label={`${d} dias`} selected={duracao === d} onPress={() => setDuracao(d)} flex />
         ))}
       </View>
@@ -74,35 +72,32 @@ export default function NovoDesafioScreen() {
         <SectionLabel tone="muted">Pontuação</SectionLabel>
       </View>
       <Card className="px-4 py-1">
-        {linhasRegras.map((r, i) => (
+        {REGRAS_PONTOS.map((r, i) => (
           <View
-            key={r.chave}
+            key={r.titulo}
             className="flex-row items-center py-3"
-            style={i !== linhasRegras.length - 1 ? { borderBottomWidth: 1, borderBottomColor: colors.line } : undefined}
+            style={i !== REGRAS_PONTOS.length - 1 ? { borderBottomWidth: 1, borderBottomColor: colors.line } : undefined}
           >
             <MiniTile size={38}>
-              <r.Icone color={colors.cyan} size={18} strokeWidth={2} />
+              {i === 0 ? <Dumbbell color={colors.cyan} size={18} strokeWidth={2} /> : i === 1 ? <Target color={colors.cyan} size={18} strokeWidth={2} /> : <Flame color={colors.cyan} size={18} strokeWidth={2} />}
             </MiniTile>
             <View className="flex-1 mx-3">
               <Text className="text-white font-bold text-sm">{r.titulo}</Text>
-              <Text className="text-cyan text-xs font-bold mt-0.5">{r.pontos}</Text>
             </View>
-            <Switch
-              value={regras[r.chave]}
-              onValueChange={(v) => setRegras((atual) => ({ ...atual, [r.chave]: v }))}
-              trackColor={{ false: '#2A2E39', true: 'rgba(0,209,255,0.5)' }}
-              thumbColor={regras[r.chave] ? colors.cyan : '#8B94A7'}
-            />
+            <Text className="text-cyan font-extrabold text-sm">{r.pontos}</Text>
           </View>
         ))}
       </Card>
+      <Text className="text-dim text-xs mt-2 px-1">
+        A meta de calorias vale nos dias em que o consumo fica entre 90% e 110% da sua meta diária.
+      </Text>
 
       <View className="mt-7 mb-3 flex-row justify-between items-center">
-        <SectionLabel tone="muted">Participantes</SectionLabel>
+        <SectionLabel tone="muted">Convidar amigos</SectionLabel>
         <Text className="text-muted text-xs font-bold">{selecionados.length} selecionados</Text>
       </View>
       <View style={{ gap: 10 }} className="mb-8">
-        {amigosAtivos.map((a) => {
+        {amigos.map((a) => {
           const ativo = selecionados.includes(a.id);
           return (
             <TouchableOpacity
@@ -136,7 +131,10 @@ export default function NovoDesafioScreen() {
         })}
       </View>
 
-      <GradientButton label="Criar desafio" onPress={criar} icon={<Swords color="#FFFFFF" size={20} strokeWidth={2.4} />} />
+      <Text className="text-dim text-xs text-center mb-4">
+        Cada amigo recebe um convite e só entra no ranking depois de aceitar.
+      </Text>
+      <GradientButton label={criando ? 'Criando...' : 'Criar desafio'} onPress={criar} icon={<Swords color="#FFFFFF" size={20} strokeWidth={2.4} />} />
     </Screen>
   );
 }
