@@ -7,3 +7,6 @@ from .historico_treino import HistoricoTreino
 from .alimento import AlimentoModel
 from .exercicio import ExercicioModel
 from .sessao_treino import SessaoTreino
+from .amizade import Amizade
+from .desafio import Desafio, DesafioParticipante
+from .atividade import Atividade, Curtida

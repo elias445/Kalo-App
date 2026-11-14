@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from app.database import engine, Base, SessionLocal
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import usuario_router , medidas_router, refeicoes_router, alimentos_router, exercicios_router, treinos_router
+from app.routers import usuario_router , medidas_router, refeicoes_router, alimentos_router, exercicios_router, treinos_router, amigos_router, desafios_router, feed_router
 from app.use_cases.carregar_taco import carregar_taco_se_vazio
 from app.use_cases.carregar_wger import carregar_wger_se_vazio
 from app.use_cases.migrar_treinos import migrar_treinos_planejados, migrar_usuarios
+from app.use_cases.migrar_comunidade import migrar_comunidade
 # Importa os models para o create_all enxergá-los
 import app.models  
 
@@ -18,6 +19,7 @@ with SessionLocal() as db:
     carregar_wger_se_vazio(db)
     migrar_treinos_planejados(db)
     migrar_usuarios(db)
+    migrar_comunidade(db)
 
 # Aplicação principal da API
 app = FastAPI(title="Kalo API", version="1.0.0")
@@ -38,6 +40,9 @@ app.include_router(refeicoes_router.router)
 app.include_router(alimentos_router.router)
 app.include_router(exercicios_router.router)
 app.include_router(treinos_router.router)
+app.include_router(amigos_router.router)
+app.include_router(desafios_router.router)
+app.include_router(feed_router.router)
 
 # Rota para testar se o servidor está no ar
 @app.get("/")
