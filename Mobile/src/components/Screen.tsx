@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform, StyleProp, ViewStyle } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, RefreshControl, KeyboardAvoidingView, Platform, StyleProp, ViewStyle, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 
@@ -8,6 +8,10 @@ type Props = {
   scroll?: boolean;
   tabbed?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  // Puxar para atualizar: a função roda e o indicador some quando ela termina
+  onRefresh?: () => Promise<unknown>;
+  // Chamada quando a rolagem chega perto do fim (para carregar mais itens)
+  onEndReached?: () => void;
 };
 
 // Brilho azul no topo da tela
@@ -37,8 +41,25 @@ function Glow() {
 }
 
 // Base de todas as telas: fundo, rolagem, teclado e áreas seguras
-export default function Screen({ children, scroll = true, tabbed = false, contentStyle }: Props) {
+export default function Screen({ children, scroll = true, tabbed = false, contentStyle, onRefresh, onEndReached }: Props) {
   const insets = useSafeAreaInsets();
+  const [atualizando, setAtualizando] = useState(false);
+
+  // Roda a atualização e mostra o indicador enquanto ela não termina
+  const atualizar = async () => {
+    setAtualizando(true);
+    try {
+      await onRefresh?.();
+    } finally {
+      setAtualizando(false);
+    }
+  };
+
+  // Avisa quando faltam menos de 400 px para o fim da rolagem
+  const aoRolar = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 400) onEndReached?.();
+  };
   const padding = {
     paddingTop: insets.top + 12,
     paddingBottom: tabbed ? 28 : insets.bottom + 28,
@@ -54,6 +75,9 @@ export default function Screen({ children, scroll = true, tabbed = false, conten
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[padding, contentStyle]}
+            refreshControl={onRefresh ? <RefreshControl refreshing={atualizando} onRefresh={atualizar} tintColor="#00D1FF" colors={['#00D1FF']} progressBackgroundColor="#101521" /> : undefined}
+            onScroll={onEndReached ? aoRolar : undefined}
+            scrollEventThrottle={200}
           >
             {children}
           </ScrollView>

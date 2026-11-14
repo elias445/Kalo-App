@@ -38,6 +38,8 @@ export type Desafio = {
   criador_id: string;
   // Só nos desafios em que o usuário já participa
   criador?: string | null;
+  // O criador não pode sair do próprio desafio
+  sou_criador?: boolean;
   participantes?: number;
   minha_posicao?: number | null;
   meus_pontos?: number;
@@ -81,6 +83,9 @@ export const REGRAS_PONTOS = [
   { titulo: 'Meta de calorias cumprida', pontos: '+30' },
   { titulo: 'Sequência de treinos', pontos: '+10 por dia' },
 ];
+
+// Quantas atividades o feed carrega por vez
+export const TAMANHO_PAGINA_FEED = 20;
 
 // Durações disponíveis para um desafio, em dias
 export const DURACOES_DESAFIO = [7, 14, 30, 60];

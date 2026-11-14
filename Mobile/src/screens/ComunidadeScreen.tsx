@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Trophy, UserPlus, Crown, Flame, Heart, Swords, Users, Dumbbell, Target, Check, X } from 'lucide-react-native';
+import { Trophy, UserPlus, Crown, Flame, Heart, Swords, Users, Dumbbell, Target, Check, X, LogOut } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import HeroCard from '../components/HeroCard';
@@ -88,7 +88,7 @@ function Podio({ posicoes }: { posicoes: LinhaRanking[] }) {
 export default function ComunidadeScreen() {
   const navigation = useNavigation<any>();
   const {
-    amizades, desafios, feed, carregarComunidade, carregarRanking, curtirAtividade,
+    amizades, desafios, feed, feedTemMais, carregarMaisFeed, carregarComunidade, carregarRanking, curtirAtividade,
     responderConviteAmizade, removerAmizade, responderConviteDesafio,
   } = useApp();
   const [aba, setAba] = useState<Aba>('Ranking');
@@ -123,6 +123,21 @@ export default function ComunidadeScreen() {
       { text: 'Desfazer', style: 'destructive', onPress: () => removerAmizade(p.amizade_id) },
     ]);
 
+  // Pede confirmação antes de sair de um desafio (o ranking dos outros continua)
+  const confirmarSaida = (desafio: { id: string; nome: string }) =>
+    Alert.alert('Sair do desafio?', `Você deixa de aparecer no ranking de "${desafio.nome}" e perde os pontos dele.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          const saiu = await responderConviteDesafio(desafio.id, false);
+          if (saiu) setDesafioId(null);
+          else Alert.alert('Não foi possível sair', 'Verifique a conexão e tente de novo.');
+        },
+      },
+    ]);
+
   // Abre a criação de desafio (só dá para convidar amigos, então avisa se ainda não há nenhum)
   const novoDesafio = () => {
     if (amizades.amigos.length === 0) {
@@ -136,7 +151,7 @@ export default function ComunidadeScreen() {
   };
 
   return (
-    <Screen tabbed>
+    <Screen tabbed onRefresh={carregarComunidade} onEndReached={aba === 'Atividade' ? carregarMaisFeed : undefined}>
       <View className="flex-row justify-between items-start mb-6">
         <View>
           <SectionLabel dot>Comunidade</SectionLabel>
@@ -208,6 +223,12 @@ export default function ComunidadeScreen() {
                 <Text className="text-cyan font-extrabold text-xl">{milhar(selecionado.meus_pontos ?? 0)}</Text>
               </View>
             </View>
+            {!selecionado.sou_criador && (
+              <TouchableOpacity onPress={() => confirmarSaida(selecionado)} activeOpacity={0.7} className="flex-row items-center self-start mt-5" style={{ gap: 6 }}>
+                <LogOut color={colors.muted} size={14} strokeWidth={2.4} />
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Sair do desafio</Text>
+              </TouchableOpacity>
+            )}
           </>
         ) : (
           <>
@@ -406,6 +427,11 @@ export default function ComunidadeScreen() {
               </View>
             </Card>
           ))}
+          {feed.length > 0 && (
+            <Text className="text-dim text-xs text-center mt-2">
+              {feedTemMais ? 'Carregando mais atividades...' : 'Você chegou à primeira atividade.'}
+            </Text>
+          )}
         </View>
       )}
     </Screen>

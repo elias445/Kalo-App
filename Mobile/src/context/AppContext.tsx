@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import React, { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { AppState as EstadoDoApp } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../services/api';
+import { avisarComunidade } from '../services/notifications';
 import { DiaTreino, ExercicioCatalogo, Frequencia, TreinoApi, dataLocal, montarPlano, planoVazio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
 import { diasPadrao } from '../data/perfil';
-import { AMIZADES_VAZIAS, DESAFIOS_VAZIOS, Amizades, Atividade, Desafios, LinhaRanking } from '../data/comunidade';
+import { AMIZADES_VAZIAS, DESAFIOS_VAZIOS, TAMANHO_PAGINA_FEED, Amizades, Atividade, Desafios, LinhaRanking } from '../data/comunidade';
 
 // Dados do perfil do usuário
 export type Perfil = { nome: string; sexo: string; idade: string; altura: string; objetivo: string; nivel: string; diasSemana: string[] };
@@ -36,6 +38,11 @@ type AppState = {
   amizades: Amizades;
   desafios: Desafios;
   feed: Atividade[];
+  // Ainda há atividades mais antigas para carregar
+  feedTemMais: boolean;
+  carregarMaisFeed: () => Promise<void>;
+  // Convites de amizade e de desafio que esperam resposta (bolinha na aba Comunidade)
+  convitesPendentes: number;
   carregarComunidade: () => Promise<void>;
   convidarAmigo: (dados: { usuario?: string; codigo?: string }) => Promise<Resultado>;
   responderConviteAmizade: (amizadeId: string, aceitar: boolean) => Promise<boolean>;
@@ -103,19 +110,91 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [amizades, setAmizades] = useState<Amizades>(AMIZADES_VAZIAS);
   const [desafios, setDesafios] = useState<Desafios>(DESAFIOS_VAZIOS);
   const [feed, setFeed] = useState<Atividade[]>([]);
+  const [feedTemMais, setFeedTemMais] = useState(false);
+  // Cópia do feed atual para as funções de carga lerem sem depender dele
+  const feedRef = useRef<Atividade[]>([]);
+  feedRef.current = feed;
+  // Evita pedir duas páginas do feed ao mesmo tempo
+  const carregandoFeed = useRef(false);
+  // Convites que o usuário já viu (null até a primeira carga, para não avisar dos que já existiam)
+  const convitesVistos = useRef<Set<string> | null>(null);
 
-  // Busca no servidor amigos, convites, desafios e o feed (cada parte falha sozinha, sem derrubar as outras)
+  // Mostra uma notificação para cada convite que chegou desde a última atualização
+  const avisarConvitesNovos = useCallback((dadosAmigos: Amizades | null, dadosDesafios: Desafios | null) => {
+    if (!dadosAmigos || !dadosDesafios) return;
+    const atuais = [
+      ...dadosAmigos.recebidos.map((p) => ({ id: `a:${p.amizade_id}`, titulo: 'Novo convite de amizade', corpo: `${p.nome} (@${p.usuario}) quer ser seu amigo no Kalo.` })),
+      ...dadosDesafios.convites.map((d) => ({ id: `d:${d.id}`, titulo: 'Convite para um desafio', corpo: `${d.criador ?? 'Um amigo'} chamou você para "${d.nome}".` })),
+    ];
+    const vistos = convitesVistos.current;
+    convitesVistos.current = new Set(atuais.map((c) => c.id));
+    if (vistos === null) return;
+    atuais.filter((c) => !vistos.has(c.id)).forEach((c) => avisarComunidade(c.titulo, c.corpo));
+  }, []);
+
+  // Busca no servidor amigos, convites, desafios e a primeira página do feed (cada parte falha sozinha, sem derrubar as outras)
   const carregarComunidade = useCallback(async () => {
     const hoje = dataLocal();
     const [dadosAmigos, dadosDesafios, dadosFeed] = await Promise.all([
       apiFetch(`/amigos/?hoje=${hoje}`).catch(() => null),
       apiFetch(`/desafios/?hoje=${hoje}`).catch(() => null),
-      apiFetch('/feed/').catch(() => null),
+      apiFetch(`/feed/?limite=${TAMANHO_PAGINA_FEED}`).catch(() => null),
     ]);
-    if (dadosAmigos && Array.isArray(dadosAmigos.amigos)) setAmizades(dadosAmigos as Amizades);
-    if (dadosDesafios && Array.isArray(dadosDesafios.ativos)) setDesafios(dadosDesafios as Desafios);
-    if (Array.isArray(dadosFeed)) setFeed(dadosFeed as Atividade[]);
-  }, []);
+    const amigosOk = dadosAmigos && Array.isArray(dadosAmigos.amigos) ? (dadosAmigos as Amizades) : null;
+    const desafiosOk = dadosDesafios && Array.isArray(dadosDesafios.ativos) ? (dadosDesafios as Desafios) : null;
+    if (amigosOk) setAmizades(amigosOk);
+    if (desafiosOk) setDesafios(desafiosOk);
+    avisarConvitesNovos(amigosOk, desafiosOk);
+    if (Array.isArray(dadosFeed)) {
+      const pagina = dadosFeed as Atividade[];
+      const atual = feedRef.current;
+      if (atual.length <= pagina.length || pagina.length === 0) {
+        setFeed(pagina);
+        setFeedTemMais(pagina.length === TAMANHO_PAGINA_FEED);
+      } else {
+        // Troca só a primeira página e mantém as atividades mais antigas que a pessoa já rolou até
+        const ids = new Set(pagina.map((a) => a.id));
+        const limite = pagina[pagina.length - 1].criado_em;
+        setFeed([...pagina, ...atual.filter((a) => a.criado_em < limite && !ids.has(a.id))]);
+      }
+    }
+  }, [avisarConvitesNovos]);
+
+  // Carrega a página seguinte do feed, com as atividades mais antigas
+  const carregarMaisFeed = useCallback(async () => {
+    if (carregandoFeed.current || !feedTemMais || feed.length === 0) return;
+    carregandoFeed.current = true;
+    try {
+      const antes = encodeURIComponent(feed[feed.length - 1].criado_em);
+      const pagina = await apiFetch(`/feed/?limite=${TAMANHO_PAGINA_FEED}&antes=${antes}`);
+      if (Array.isArray(pagina)) {
+        setFeed((atual) => {
+          const ids = new Set(atual.map((a) => a.id));
+          return [...atual, ...(pagina as Atividade[]).filter((a) => !ids.has(a.id))];
+        });
+        setFeedTemMais(pagina.length === TAMANHO_PAGINA_FEED);
+      }
+    } catch (erro) {
+      console.error('Erro ao carregar mais atividades:', erro);
+    } finally {
+      carregandoFeed.current = false;
+    }
+  }, [feed, feedTemMais]);
+
+  // Com o usuário logado, atualiza a comunidade a cada 30 s (app aberto) e ao voltar para o app
+  useEffect(() => {
+    if (!usuarioId) return;
+    const intervalo = setInterval(() => {
+      if (EstadoDoApp.currentState === 'active') carregarComunidade();
+    }, 30000);
+    const assinatura = EstadoDoApp.addEventListener('change', (estado) => {
+      if (estado === 'active') carregarComunidade();
+    });
+    return () => {
+      clearInterval(intervalo);
+      assinatura.remove();
+    };
+  }, [usuarioId, carregarComunidade]);
 
 
   // Busca o plano no servidor; no início da sessão, se o usuário ainda não tem plano, o servidor gera o padrão
@@ -206,6 +285,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAmizades(AMIZADES_VAZIAS);
     setDesafios(DESAFIOS_VAZIOS);
     setFeed([]);
+    setFeedTemMais(false);
+    convitesVistos.current = null;
     await AsyncStorage.removeItem('@kalo_token');
     await AsyncStorage.removeItem('@kalo_id');
     await AsyncStorage.removeItem('@kalo_perfil');
@@ -367,11 +448,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [feed]);
 
+  // Convites esperando resposta (mostrados como bolinha na aba Comunidade)
+  const convitesPendentes = amizades.recebidos.length + desafios.convites.length;
+
   // Valores entregues a todas as telas
   const valor = useMemo(() => ({
     usuarioId, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
-    amizades, desafios, feed, carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
-  }), [usuarioId, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
+    amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
+  }), [usuarioId, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
     carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade]);
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
