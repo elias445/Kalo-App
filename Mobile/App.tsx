@@ -27,6 +27,7 @@ import RegistrarPesoScreen from './src/screens/RegistrarPesoScreen';
 import CronogramaTreinoScreen from './src/screens/CronogramaTreinoScreen';
 import EditarExercicioScreen from './src/screens/EditarExercicioScreen';
 import TreinoDoDiaScreen from './src/screens/TreinoDoDiaScreen';
+import DetalheExercicioScreen from './src/screens/DetalheExercicioScreen';
 import { RefeicoesProvider } from './src/context/RefeicoesContext';
 
 // Navegador em pilha (telas empilhadas)
@@ -97,6 +98,7 @@ export default function App() {
           <Stack.Screen name="Main" component={AppTabs} />
           <Stack.Screen name="TreinoDoDia" component={TreinoDoDiaScreen} />
           <Stack.Screen name="EditarExercicio" component={EditarExercicioScreen} />
+          <Stack.Screen name="DetalheExercicio" component={DetalheExercicioScreen} />
           <Stack.Screen name="RegistrarPeso" component={RegistrarPesoScreen} />
           <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} />
           <Stack.Screen name="AdicionarAmigo" component={AdicionarAmigoScreen} />
