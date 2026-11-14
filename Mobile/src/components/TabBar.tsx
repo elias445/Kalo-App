@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Home, Dumbbell, Utensils, User, Trophy } from 'lucide-react-native';
 import { colors, gradients, glow } from '../theme';
+import { useApp } from '../context/AppContext';
 
 // Rótulo e ícone de cada aba
 const ITENS: Record<string, { label: string; Icon: typeof Home }> = {
@@ -21,6 +22,7 @@ const ELEVACAO = 20;
 // Barra de abas personalizada, com a Comunidade em destaque
 export default function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { convitesPendentes } = useApp();
 
   return (
     <View style={{ paddingBottom: Math.max(insets.bottom, 10) }}>
@@ -62,6 +64,17 @@ export default function TabBar({ state, navigation }: BottomTabBarProps) {
                   >
                     <item.Icon color="#FFFFFF" size={24} strokeWidth={2.2} />
                   </LinearGradient>
+                  {convitesPendentes > 0 && (
+                    <View
+                      className="items-center justify-center"
+                      style={{
+                        position: 'absolute', top: -2, right: -2, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 5,
+                        backgroundColor: colors.danger, borderWidth: 2, borderColor: colors.ink,
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>{convitesPendentes > 9 ? '9+' : convitesPendentes}</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={{ color: focado ? colors.cyan : colors.muted, fontSize: 10, fontWeight: '800', marginTop: 4 }}>{item.label}</Text>
               </TouchableOpacity>
