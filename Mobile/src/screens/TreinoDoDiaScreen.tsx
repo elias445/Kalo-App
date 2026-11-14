@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Check, Clock, Flame, Layers, Dumbbell } from 'lucide-react-native';
+import { Check, Clock, Flame, Layers, Dumbbell, Info } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import HeroCard from '../components/HeroCard';
 import RingProgress from '../components/RingProgress';
 import { GradientButton } from '../components/Buttons';
-import { BackButton, Badge, InfoChip, SectionLabel } from '../components/UI';
+import { BackButton, Badge, IconButton, InfoChip, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { diaDeHoje, estimarTreino, formatarCarga } from '../data/treino';
 import { colors } from '../theme';
 
 // Tela do treino do dia com checklist de exercícios
 export default function TreinoDoDiaScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { plano } = useApp();
+  const { plano, frequencia, registrarTreino } = useApp();
 
   const dia: string = route.params?.dia ?? diaDeHoje();
   const treino = plano[dia];
@@ -24,25 +24,47 @@ export default function TreinoDoDiaScreen() {
   const estimativa = estimarTreino(exercicios);
 
   // Ids dos exercícios marcados como feitos
-  const [concluidos, setConcluidos] = useState<number[]>([]);
+  const [concluidos, setConcluidos] = useState<string[]>([]);
+  const [salvando, setSalvando] = useState(false);
 
   // Marca ou desmarca um exercício
-  const alternar = (id: number) =>
+  const alternar = (id: string) =>
     setConcluidos((atual) => (atual.includes(id) ? atual.filter((item) => item !== id) : [...atual, id]));
 
   const total = exercicios.length;
   const progresso = total ? concluidos.length / total : 0;
 
-  // Confirma a conclusão (avisa se o treino estiver incompleto)
+  // Só dá para registrar o treino de hoje, uma vez por dia
+  const ehHoje = dia === diaDeHoje();
+  const jaRegistrado = ehHoje && !!frequencia?.treinou_hoje;
+
+  // Envia o treino ao servidor e mostra o resultado
+  const registrar = async () => {
+    if (salvando) return;
+    setSalvando(true);
+    const resultado = await registrarTreino(concluidos.length);
+    setSalvando(false);
+    if (resultado.ok) {
+      Alert.alert('Treino concluído!', 'Parabéns! Seu treino foi registrado.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    } else {
+      Alert.alert('Não foi possível registrar', resultado.erro ?? 'Verifique a conexão e tente de novo.');
+    }
+  };
+
+  // Confirma a conclusão (exige ao menos um exercício e avisa se o treino estiver incompleto)
   const finalizar = () => {
+    if (concluidos.length === 0) {
+      Alert.alert('Nenhum exercício marcado', 'Marque ao menos um exercício feito para registrar o treino.');
+      return;
+    }
     if (concluidos.length < total) {
       Alert.alert('Treino incompleto', `Você concluiu ${concluidos.length} de ${total} exercícios. Deseja finalizar mesmo assim?`, [
         { text: 'Continuar treino', style: 'cancel' },
-        { text: 'Finalizar', onPress: () => navigation.goBack() },
+        { text: 'Finalizar', onPress: registrar },
       ]);
       return;
     }
-    Alert.alert('Treino concluído!', 'Parabéns! Seu treino foi registrado.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    registrar();
   };
 
   return (
@@ -111,6 +133,9 @@ export default function TreinoDoDiaScreen() {
                     <Text className="text-muted text-xs font-bold">{formatarCarga(ex.carga)}</Text>
                   </View>
                 </View>
+                <IconButton size={40} onPress={() => navigation.navigate('DetalheExercicio', { exercicio: ex })}>
+                  <Info color={colors.muted} size={18} strokeWidth={2.2} />
+                </IconButton>
               </Card>
             </TouchableOpacity>
           );
@@ -118,8 +143,16 @@ export default function TreinoDoDiaScreen() {
         {total === 0 && <Text className="text-muted text-center">Nenhum exercício neste dia.</Text>}
       </View>
 
-      {total > 0 && (
-        <GradientButton label="Concluir treino" onPress={finalizar} icon={<Check color="#FFFFFF" size={20} strokeWidth={3} />} />
+      {total > 0 && jaRegistrado && (
+        <View className="items-center">
+          <Badge tone="ok" label="Treino de hoje já registrado" icon={<Check color={colors.ok} size={13} strokeWidth={3} />} />
+        </View>
+      )}
+      {total > 0 && !jaRegistrado && ehHoje && (
+        <GradientButton label={salvando ? 'Registrando...' : 'Concluir treino'} onPress={finalizar} icon={<Check color="#FFFFFF" size={20} strokeWidth={3} />} />
+      )}
+      {total > 0 && !ehHoje && (
+        <Text className="text-dim text-xs text-center">Só é possível registrar o treino do dia de hoje.</Text>
       )}
     </Screen>
   );

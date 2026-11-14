@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pencil, Plus, Moon, Clock, Flame, Layers, Dumbbell } from 'lucide-react-native';
+import { Pencil, Plus, Moon, Clock, Flame, Layers, Dumbbell, Check } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
-import { OutlineButton } from '../components/Buttons';
-import { IconButton, IconTile, SectionLabel } from '../components/UI';
+import { GradientButton, OutlineButton } from '../components/Buttons';
+import { Badge, IconButton, IconTile, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { DIAS, diaDeHoje, estimarTreino } from '../data/treino';
 import { colors, gradients, glow } from '../theme';
@@ -27,7 +27,7 @@ function Info({ icon, texto }: { icon: React.ReactNode; texto: string }) {
 // Tela da aba Treino: cronograma semanal
 export default function CronogramaTreinoScreen() {
   const navigation = useNavigation<any>();
-  const { plano } = useApp();
+  const { plano, frequencia } = useApp();
   const hoje = diaDeHoje();
   const [diaSelecionado, setDiaSelecionado] = useState(hoje);
 
@@ -140,7 +140,8 @@ export default function CronogramaTreinoScreen() {
       ) : (
         <View style={{ gap: 12 }}>
           {treino.exercicios.map((ex, i) => (
-            <Card key={ex.id} className="flex-row items-center p-4 rounded-[22px]">
+            <TouchableOpacity key={ex.id} activeOpacity={0.85} onPress={() => navigation.navigate('DetalheExercicio', { exercicio: ex })}>
+            <Card className="flex-row items-center p-4 rounded-[22px]">
               <View
                 className="items-center justify-center"
                 style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: 'rgba(0,209,255,0.10)', borderWidth: 1, borderColor: 'rgba(0,209,255,0.25)' }}
@@ -160,7 +161,23 @@ export default function CronogramaTreinoScreen() {
                 <Pencil color={colors.muted} size={17} strokeWidth={2} />
               </IconButton>
             </Card>
+            </TouchableOpacity>
           ))}
+          {diaSelecionado === hoje && (
+            <View className="mt-3 items-center">
+              {frequencia?.treinou_hoje ? (
+                <Badge tone="ok" label="Treino de hoje concluído" icon={<Check color={colors.ok} size={13} strokeWidth={3} />} />
+              ) : (
+                <View style={{ alignSelf: 'stretch' }}>
+                  <GradientButton
+                    label="Registrar treino"
+                    onPress={() => navigation.navigate('TreinoDoDia', { dia: hoje })}
+                    icon={<Check color="#FFFFFF" size={20} strokeWidth={3} />}
+                  />
+                </View>
+              )}
+            </View>
+          )}
         </View>
       )}
     </Screen>

@@ -4,11 +4,12 @@ import { useNavigation } from '@react-navigation/native';
 import { ChevronDown, Zap, Target } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import { NumberRow } from '../components/Field';
+import SeletorDias from '../components/SeletorDias';
 import OptionSheet from '../components/OptionSheet';
 import { GradientButton } from '../components/Buttons';
 import { BackButton, Badge, Chip, ProgressBar } from '../components/UI';
 import { useApp } from '../context/AppContext';
-import { OBJETIVOS, SEXOS } from '../data/perfil';
+import { DIAS_TREINO, NIVEIS, OBJETIVOS, SEXOS } from '../data/perfil';
 import { colors } from '../theme';
 import { apiFetch } from '../services/api';
 
@@ -16,13 +17,15 @@ import { apiFetch } from '../services/api';
 // Tela de dados biométricos (passo 1 do onboarding)
 export default function OnboardingScreen() {
   const navigation = useNavigation();
-  const { perfil, pesoAtual, atualizarPerfil, registrarPeso, usuarioId } = useApp();
+  const { perfil, pesoAtual, atualizarPerfil, registrarPeso, usuarioId, gerarPlano: gerarPlanoNoServidor } = useApp();
 
   const [sexo, setSexo] = useState(perfil.sexo);
   const [idade, setIdade] = useState(perfil.idade);
   const [altura, setAltura] = useState(perfil.altura);
   const [peso, setPeso] = useState(String(pesoAtual).replace('.', ','));
   const [objetivo, setObjetivo] = useState(perfil.objetivo);
+  const [nivel, setNivel] = useState(perfil.nivel);
+  const [diasSemana, setDiasSemana] = useState<string[]>(perfil.diasSemana);
   const [sheetAberto, setSheetAberto] = useState(false);
 
   // Salva os dados e o primeiro peso no servidor e abre o plano gerado
@@ -34,6 +37,11 @@ export default function OnboardingScreen() {
       return;
     }
 
+    if (diasSemana.length < 2 || diasSemana.length > 6) {
+      Alert.alert('Dias de treino', 'Escolha de 2 a 6 dias da semana para treinar.');
+      return;
+    }
+
     try {
       await apiFetch('/usuarios/onboarding', {
         method: 'PUT',
@@ -42,7 +50,10 @@ export default function OnboardingScreen() {
           idade: Number(idade),
           altura: Number(altura),
           peso_atual: pesoNumero,
-          objetivo: objetivo
+          objetivo: objetivo,
+          nivel_experiencia: nivel,
+          dias_semana: DIAS_TREINO.filter((d) => diasSemana.includes(d)),
+          dias_treino: diasSemana.length,
         })
       });
 
@@ -54,8 +65,15 @@ export default function OnboardingScreen() {
         });
       }
 
-      atualizarPerfil({ sexo, idade, altura, objetivo });
+      atualizarPerfil({ sexo, idade, altura, objetivo, nivel, diasSemana: DIAS_TREINO.filter((d) => diasSemana.includes(d)) });
       if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
+
+      // O servidor monta o plano de treino com o objetivo, o nível e os dias escolhidos
+      const gerou = await gerarPlanoNoServidor(true);
+      if (!gerou) {
+        Alert.alert('Erro', 'Seus dados foram salvos, mas não foi possível gerar o plano de treino. Tente de novo.');
+        return;
+      }
       
       navigation.navigate('PlanoGerado' as never);
 
@@ -112,6 +130,18 @@ export default function OnboardingScreen() {
         </View>
         <ChevronDown color={colors.cyan} size={20} strokeWidth={2.2} />
       </TouchableOpacity>
+
+      <Text className="text-white text-sm font-bold mb-3">Nível de experiência</Text>
+      <View className="flex-row mb-6" style={{ gap: 10 }}>
+        {NIVEIS.map((opcao) => (
+          <Chip key={opcao} label={opcao} selected={nivel === opcao} onPress={() => setNivel(opcao)} flex ajustar />
+        ))}
+      </View>
+
+      <Text className="text-white text-sm font-bold mb-3">Dias de treino</Text>
+      <View className="mb-10">
+        <SeletorDias selecionados={diasSemana} onChange={setDiasSemana} />
+      </View>
 
       <GradientButton
         variant="cyan"

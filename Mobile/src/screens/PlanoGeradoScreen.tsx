@@ -44,7 +44,8 @@ export default function PlanoGeradoScreen() {
 
       <SectionLabel dot>Plano personalizado</SectionLabel>
       <Text className="text-white text-3xl font-extrabold mt-2">Seu plano está pronto!</Text>
-      <Text className="text-muted text-sm mt-2 mb-6">Objetivo: {perfil.objetivo}</Text>
+      <Text className="text-muted text-sm mt-2">Objetivo: {perfil.objetivo}</Text>
+      <Text className="text-muted text-sm mt-1 mb-6">{perfil.nivel}  •  {perfil.diasSemana.length} dias por semana</Text>
 
       <HeroCard padding={26} style={{ marginBottom: 16 }} contentStyle={{ alignItems: 'center' }}>
         <View style={{ position: 'absolute', right: -14, top: -16, opacity: 0.1 }}>

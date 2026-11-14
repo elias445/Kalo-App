@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { apiFetch } from '../services/api';
-import { PLANO_PADRAO, DiaTreino, Exercicio } from '../data/treino';
+import { DiaTreino, ExercicioCatalogo, Frequencia, TreinoApi, dataLocal, montarPlano, planoVazio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
+import { diasPadrao } from '../data/perfil';
 import { AMIGOS_INICIAIS, DESAFIO_INICIAL, Amigo, Desafio } from '../data/comunidade';
 
 // Dados do perfil do usuário
-export type Perfil = { nome: string; sexo: string; idade: string; altura: string; objetivo: string };
+export type Perfil = { nome: string; sexo: string; idade: string; altura: string; objetivo: string; nivel: string; diasSemana: string[] };
 // Um ponto do gráfico de peso
 export type RegistroPeso = { value: number; label: string };
 
@@ -25,8 +26,13 @@ type AppState = {
   registrarPeso: (valor: number) => void;
   metas: Metas;
   plano: Record<string, DiaTreino>;
-  salvarExercicio: (dia: string, exercicio: Omit<Exercicio, 'id'> & { id?: number }) => void;
-  removerExercicio: (dia: string, id: number) => void;
+  salvarExercicio: (dia: string, exercicio: ExercicioCatalogo, substituirId?: string) => Promise<boolean>;
+  removerExercicio: (id: string) => Promise<boolean>;
+  gerarPlano: (substituir?: boolean) => Promise<boolean>;
+  recarregarPlano: () => Promise<void>;
+  frequencia: Frequencia | null;
+  carregarFrequencia: () => Promise<void>;
+  registrarTreino: (exerciciosConcluidos: number) => Promise<{ ok: boolean; erro?: string }>;
   amigos: Amigo[];
   adicionarAmigo: (nome: string, usuario: string) => void;
   desafio: Desafio;
@@ -59,6 +65,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     idade: '24',
     altura: '178',
     objetivo: 'Hipertrofia e Ganho de Massa',
+    nivel: 'Iniciante',
+    diasSemana: ['Seg', 'Ter', 'Qui', 'Sex'],
   });
 
   // Histórico de peso (exemplo até carregar o do servidor)
@@ -70,12 +78,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     { value: 64.5, label: '15/11' },
   ]);
 
-  // Plano de treino (guardado só no app)
-  const [plano, setPlano] = useState<Record<string, DiaTreino>>(PLANO_PADRAO);
+  // Plano de treino (vem do servidor)
+  const [plano, setPlano] = useState<Record<string, DiaTreino>>(planoVazio());
+  // Frequência de treino do mês (vem do servidor)
+  const [frequencia, setFrequencia] = useState<Frequencia | null>(null);
   // Comunidade (dados de exemplo)
   const [amigos, setAmigos] = useState<Amigo[]>(AMIGOS_INICIAIS);
   const [desafio, setDesafio] = useState<Desafio>(DESAFIO_INICIAL);
 
+
+  // Busca o plano no servidor; no início da sessão, se o usuário ainda não tem plano, o servidor gera o padrão
+  const carregarPlano = useCallback(async (gerarSeVazio = false) => {
+    try {
+      let itens = await apiFetch('/treinos/');
+      if (gerarSeVazio && Array.isArray(itens) && itens.length === 0) {
+        itens = await apiFetch('/treinos/gerar', { method: 'POST' });
+      }
+      if (Array.isArray(itens)) setPlano(montarPlano(itens as TreinoApi[]));
+    } catch (erro) {
+      console.error('Erro ao carregar o plano de treino:', erro);
+    }
+  }, []);
+
+  // Busca no servidor a frequência de treino do mês atual (calendário, consistência e sequência)
+  const carregarFrequencia = useCallback(async () => {
+    try {
+      const hoje = dataLocal();
+      const dados = await apiFetch(`/treinos/frequencia?mes=${hoje.slice(0, 7)}&hoje=${hoje}`);
+      if (dados && Array.isArray(dados.dias_treinados)) setFrequencia(dados as Frequencia);
+    } catch (erro) {
+      console.error('Erro ao carregar a frequência de treino:', erro);
+    }
+  }, []);
 
   // Ao abrir o app, restaura a sessão salva no celular
   useEffect(() => {
@@ -86,11 +120,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (tokenSalvo && idSalvo && perfilSalvo) {
         setUsuarioId(idSalvo);
-        setPerfil(JSON.parse(perfilSalvo));
+        setPerfil((atual) => ({ ...atual, ...JSON.parse(perfilSalvo) }));
+        carregarPlano(true);
+        carregarFrequencia();
       }
     }
     carregarSessao();
-  }, []);
+  }, [carregarPlano, carregarFrequencia]);
 
   
   // Guarda token e perfil após login/cadastro e carrega o histórico de peso
@@ -104,6 +140,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       idade: usuario.idade != null ? String(usuario.idade) : perfil.idade,
       altura: usuario.altura != null ? String(usuario.altura) : perfil.altura,
       objetivo: usuario.objetivo || perfil.objetivo,
+      nivel: usuario.nivel_experiencia || perfil.nivel,
+      diasSemana: usuario.dias_preferidos ?? diasPadrao(usuario.dias_treino) ?? perfil.diasSemana,
     };
     setPerfil(novoPerfil);
     if (usuario.peso_atual != null) {
@@ -123,6 +161,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (erro) {
       console.error('Erro ao carregar o histórico de peso:', erro);
     }
+
+    // Quem ainda não fez o onboarding recebe o plano depois, já com nível e dias escolhidos
+    await carregarPlano(!!usuario.onboarding_completo);
+    await carregarFrequencia();
   };
 
   // Apaga a sessão do estado e do celular
@@ -144,24 +186,68 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Funções que alteram perfil, peso, treino e comunidade
   const atualizarPerfil = useCallback((dados: Partial<Perfil>) => setPerfil((atual) => ({ ...atual, ...dados })), []);
   const registrarPeso = useCallback((valor: number) => setPesos((atual) => [...atual, { value: valor, label: rotuloHoje() }]), []);
-  const salvarExercicio = useCallback((dia: string, exercicio: Omit<Exercicio, 'id'> & { id?: number }) => {
-    setPlano((atual) => {
-      const lista = atual[dia].exercicios;
-      const novo = { ...exercicio, id: exercicio.id ?? Date.now() };
-      const exercicios = lista.some((e) => e.id === novo.id) ? lista.map((e) => (e.id === novo.id ? novo : e)) : [...lista, novo];
-      return { ...atual, [dia]: { ...atual[dia], exercicios } };
-    });
+  // Adiciona o exercício ao dia (ou troca o exercício informado) no servidor e recarrega o plano
+  const salvarExercicio = useCallback(async (dia: string, exercicio: ExercicioCatalogo, substituirId?: string) => {
+    try {
+      const resposta = substituirId
+        ? await apiFetch(`/treinos/${substituirId}`, { method: 'PUT', body: JSON.stringify({ exercicio_id: exercicio.id }) })
+        : await apiFetch('/treinos/', { method: 'POST', body: JSON.stringify({ dia_semana: dia, exercicio_id: exercicio.id }) });
+      if (!resposta?.id) return false;
+      await carregarPlano();
+      return true;
+    } catch (erro) {
+      console.error('Erro ao salvar o exercício:', erro);
+      return false;
+    }
+  }, [carregarPlano]);
+  // Busca de novo o plano salvo no servidor (usado depois de refazer o plano pelo perfil)
+  const recarregarPlano = useCallback(() => carregarPlano(false), [carregarPlano]);
+  // Gera o plano no servidor pelo objetivo, nível e dias por semana do usuário
+  const gerarPlano = useCallback(async (substituir = false) => {
+    try {
+      const itens = await apiFetch(`/treinos/gerar?substituir=${substituir}`, { method: 'POST' });
+      if (!Array.isArray(itens)) return false;
+      setPlano(montarPlano(itens as TreinoApi[]));
+      return true;
+    } catch (erro) {
+      console.error('Erro ao gerar o plano de treino:', erro);
+      return false;
+    }
   }, []);
-  const removerExercicio = useCallback((dia: string, id: number) => setPlano((atual) => ({
-    ...atual, [dia]: { ...atual[dia], exercicios: atual[dia].exercicios.filter((e) => e.id !== id) },
-  })), []);
+  // Registra o treino de hoje como concluído no servidor e atualiza a frequência
+  const registrarTreino = useCallback(async (exerciciosConcluidos: number) => {
+    try {
+      const resposta = await apiFetch('/treinos/concluir', {
+        method: 'POST',
+        body: JSON.stringify({ data_treino: dataLocal(), exercicios_concluidos: exerciciosConcluidos }),
+      });
+      if (!resposta?.id) return { ok: false, erro: typeof resposta?.detail === 'string' ? resposta.detail : undefined };
+      await carregarFrequencia();
+      return { ok: true };
+    } catch (erro) {
+      console.error('Erro ao registrar o treino:', erro);
+      return { ok: false };
+    }
+  }, [carregarFrequencia]);
+  // Remove o exercício do plano no servidor e recarrega o plano
+  const removerExercicio = useCallback(async (id: string) => {
+    try {
+      const resposta = await apiFetch(`/treinos/${id}`, { method: 'DELETE' });
+      if (!resposta?.status) return false;
+      await carregarPlano();
+      return true;
+    } catch (erro) {
+      console.error('Erro ao remover o exercício:', erro);
+      return false;
+    }
+  }, [carregarPlano]);
   const adicionarAmigo = useCallback((nome: string, usuario: string) => setAmigos((atual) => atual.some((a) => a.usuario === usuario) ? atual : [...atual, { id: `${usuario}-${Date.now()}`, nome, usuario, pontos: 0, treinos: 0, sequencia: 0, status: 'pendente' }]), []);
   const criarDesafio = useCallback((nome: string, duracao: number, participantes: string[]) => setDesafio({ nome, duracao, diaAtual: 1, participantes }), []);
 
   // Valores entregues a todas as telas
   const valor = useMemo(() => ({
-    usuarioId, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, amigos, adicionarAmigo, desafio, criarDesafio,
-  }), [usuarioId, perfil, pesos, pesoAtual, metas, plano, amigos, desafio, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, adicionarAmigo, criarDesafio]);
+    usuarioId, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino, amigos, adicionarAmigo, desafio, criarDesafio,
+  }), [usuarioId, perfil, pesos, pesoAtual, metas, plano, amigos, desafio, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino, adicionarAmigo, criarDesafio]);
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
 }

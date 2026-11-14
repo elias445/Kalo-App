@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, LogOut, Pencil, Plus, Dumbbell, Flame, TrendingDown, TrendingUp } from 'lucide-react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import { Badge, IconButton, SectionLabel } from '../components/UI';
@@ -15,11 +15,6 @@ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 // Iniciais dos dias da semana
 const CABECALHO_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-// Histórico de treino simulado: treina seg, ter, qui, sex e sáb, com uma falta nos dias 9, 18 e 27
-const DIAS_DE_TREINO = [1, 2, 4, 5, 6];
-const treinoPlanejado = (data: Date) => DIAS_DE_TREINO.includes(data.getDay());
-const treinouEm = (data: Date) => treinoPlanejado(data) && data.getDate() % 9 !== 0;
-
 // Peso com 1 casa decimal e vírgula
 const formatarKg = (n: number) => n.toFixed(1).replace('.', ',');
 
@@ -27,7 +22,14 @@ const formatarKg = (n: number) => n.toFixed(1).replace('.', ',');
 export default function PerfilScreen() {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
-  const { perfil, pesos, pesoAtual } = useApp();
+  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia } = useApp();
+
+  // Atualiza a frequência sempre que a aba é aberta
+  useFocusEffect(
+    useCallback(() => {
+      carregarFrequencia();
+    }, [carregarFrequencia])
+  );
 
   // Volta para a tela de login
   const handleLogout = () => {
@@ -48,25 +50,14 @@ export default function PerfilScreen() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = hoje.getMonth();
-  const diaHoje = hoje.getDate();
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
   const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
 
-  const treinou = (d: number) => d < diaHoje && treinouEm(new Date(ano, mes, d));
-  const diasPassados = Array.from({ length: diaHoje - 1 }, (_, i) => i + 1);
-  const planejadosPassados = diasPassados.filter((d) => treinoPlanejado(new Date(ano, mes, d))).length;
-  const totalTreinados = diasPassados.filter(treinou).length;
-  // Consistência: treinos feitos dividido pelos planejados
-  const consistencia = planejadosPassados ? Math.round((totalTreinados / planejadosPassados) * 100) : 100;
-
-  // Sequência de treinos seguidos (dias de descanso não quebram)
-  let sequencia = 0;
-  for (let i = 1; i <= 365; i++) {
-    const data = new Date(ano, mes, diaHoje - i);
-    if (!treinoPlanejado(data)) continue;
-    if (!treinouEm(data)) break;
-    sequencia++;
-  }
+  // Frequência real vinda do servidor: dias treinados, consistência (feitos dividido pelos planejados) e sequência
+  const treinou = (d: number) => !!frequencia?.dias_treinados.includes(d);
+  const totalTreinados = frequencia?.total_treinos_mes ?? 0;
+  const consistencia = frequencia?.consistencia ?? 100;
+  const sequencia = frequencia?.sequencia ?? 0;
 
   // Calendário em semanas de 7 colunas, de domingo a sábado
   const celulas: (number | null)[] = [
@@ -108,12 +99,12 @@ export default function PerfilScreen() {
         <Card className="flex-1 items-center py-4 rounded-2xl">
           <Dumbbell color={colors.cyan} size={18} strokeWidth={2} />
           <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>TREINOS</Text>
-          <Text className="text-white font-extrabold text-xl mt-0.5">142</Text>
+          <Text className="text-white font-extrabold text-xl mt-0.5">{frequencia?.total_treinos ?? 0}</Text>
         </Card>
         <Card className="flex-1 items-center py-4 rounded-2xl">
           <Flame color={colors.cyan} size={18} strokeWidth={2} />
-          <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>MÉDIA/DIA</Text>
-          <Text className="text-white font-extrabold text-xl mt-0.5">640 <Text className="text-muted text-xs">kcal</Text></Text>
+          <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>SEQUÊNCIA</Text>
+          <Text className="text-white font-extrabold text-xl mt-0.5">{sequencia} <Text className="text-muted text-xs">{sequencia === 1 ? 'dia' : 'dias'}</Text></Text>
         </Card>
         <Card className="flex-1 items-center py-4 rounded-2xl">
           {emQueda ? <TrendingDown color={colors.cyan} size={18} strokeWidth={2} /> : <TrendingUp color={colors.cyan} size={18} strokeWidth={2} />}
@@ -195,6 +186,7 @@ export default function PerfilScreen() {
               return (
                 <View key={coluna} className="items-center justify-center" style={{ flex: 1 }}>
                   <View
+                    key={feito ? 'treinado' : 'livre'}
                     className="items-center justify-center"
                     style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: feito ? colors.cyan : 'transparent' }}
                   >
