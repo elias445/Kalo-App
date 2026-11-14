@@ -61,6 +61,20 @@ async function agendarRefeicao(titulo: string, hora: number, minuto: number, cor
       channelId: 'default'
     },});
 }
+// Mostra na hora uma notificação da comunidade (convite novo), se o usuário permitiu notificações
+export async function avisarComunidade(titulo: string, corpo: string) {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
+    await Notifications.scheduleNotificationAsync({
+      content: { title: titulo, body: corpo, sound: true },
+      trigger: Platform.OS === 'android' ? { channelId: 'default' } : null,
+    });
+  } catch (erro) {
+    console.error('Erro ao mostrar a notificação da comunidade:', erro);
+  }
+}
+
 // Lista as notificações que estão na bandeja do celular
 export async function checarNotificacoesNaTela() {
   const notificacoesAtivas = await Notifications.getPresentedNotificationsAsync();
