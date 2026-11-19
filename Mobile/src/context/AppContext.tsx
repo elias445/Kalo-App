@@ -19,7 +19,7 @@ export const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lan
 // Tudo que o estado global oferece às telas
 type AppState = {
   usuarioId: string | null; 
-  iniciarSessao: (usuario: any, novoToken: string) => Promise<void>; 
+  iniciarSessao: (usuario: any, novoToken: string, novoRefreshToken?: string) => Promise<void>; 
   encerrarSessao: () => Promise<void>; 
   perfil: Perfil;
   atualizarPerfil: (dados: Partial<Perfil>) => void;
@@ -240,8 +240,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [carregarPlano, carregarFrequencia, carregarComunidade]);
 
   
-  // Guarda token e perfil após login/cadastro e carrega o histórico de peso
-  const iniciarSessao = async (usuario: any, novoToken: string) => {
+  // Guarda tokens e perfil após login/cadastro e carrega o histórico de peso
+  const iniciarSessao = async (usuario: any, novoToken: string, novoRefreshToken?: string) => {
     setUsuarioId(usuario.id);
 
     const novoPerfil = {
@@ -260,6 +260,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     await AsyncStorage.setItem('@kalo_token', novoToken);
+    if (novoRefreshToken) {
+      await AsyncStorage.setItem('@kalo_refresh_token', novoRefreshToken);
+    }
     await AsyncStorage.setItem('@kalo_id', usuario.id);
     await AsyncStorage.setItem('@kalo_perfil', JSON.stringify(novoPerfil));
 
@@ -287,9 +290,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setFeed([]);
     setFeedTemMais(false);
     convitesVistos.current = null;
-    await AsyncStorage.removeItem('@kalo_token');
-    await AsyncStorage.removeItem('@kalo_id');
-    await AsyncStorage.removeItem('@kalo_perfil');
+    await AsyncStorage.multiRemove(['@kalo_token', '@kalo_refresh_token', '@kalo_id', '@kalo_perfil']);
   };
 
   // Último peso registrado
