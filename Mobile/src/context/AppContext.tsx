@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { AppState as EstadoDoApp } from 'react-native';
+import { AppState as EstadoDoApp, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../services/api';
-import { avisarComunidade } from '../services/notifications';
+import { isBiometricSupported, authenticate, storeBiometricEnabled, getBiometricEnabled } from '../services/biometric';
 import { DiaTreino, ExercicioCatalogo, Frequencia, TreinoApi, dataLocal, montarPlano, planoVazio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
 import { diasPadrao } from '../data/perfil';
@@ -18,9 +18,9 @@ export const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lan
 
 // Tudo que o estado global oferece às telas
 type AppState = {
-  usuarioId: string | null; 
-  iniciarSessao: (usuario: any, novoToken: string, novoRefreshToken?: string) => Promise<void>; 
-  encerrarSessao: () => Promise<void>; 
+  usuarioId: string | null;
+  iniciarSessao: (usuario: any, novoToken: string, novoRefreshToken?: string) => Promise<void>;
+  encerrarSessao: () => Promise<void>;
   perfil: Perfil;
   atualizarPerfil: (dados: Partial<Perfil>) => void;
   pesos: RegistroPeso[];
@@ -38,10 +38,8 @@ type AppState = {
   amizades: Amizades;
   desafios: Desafios;
   feed: Atividade[];
-  // Ainda há atividades mais antigas para carregar
   feedTemMais: boolean;
   carregarMaisFeed: () => Promise<void>;
-  // Convites de amizade e de desafio que esperam resposta (bolinha na aba Comunidade)
   convitesPendentes: number;
   carregarComunidade: () => Promise<void>;
   convidarAmigo: (dados: { usuario?: string; codigo?: string }) => Promise<Resultado>;
@@ -51,6 +49,10 @@ type AppState = {
   responderConviteDesafio: (desafioId: string, aceitar: boolean) => Promise<boolean>;
   carregarRanking: (desafioId: string) => Promise<LinhaRanking[] | null>;
   curtirAtividade: (atividadeId: string) => Promise<void>;
+  // Biometria
+  biometriaHabilitada: boolean;
+  habilitarBiometria: () => Promise<void>;
+  desbloquearComBiometria: () => Promise<boolean>;
 };
 
 // Resultado de uma ação no servidor: deu certo ou a mensagem de erro que ele devolveu
@@ -81,6 +83,7 @@ const rotuloHoje = () => {
 // Provedor do estado global: sessão, perfil, peso, treino e comunidade
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [biometriaHabilitada, setBiometriaHabilitada] = useState(false);
 
   // Perfil (valores iniciais até o login)
   const [perfil, setPerfil] = useState<Perfil>({
@@ -229,6 +232,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const perfilSalvo = await AsyncStorage.getItem('@kalo_perfil');
 
       if (tokenSalvo && idSalvo && perfilSalvo) {
+        // Verifica se a biometria estava habilitada antes de expor o app
+        const bioHabilitada = await getBiometricEnabled();
+        if (bioHabilitada) {
+          setBiometriaHabilitada(true);
+          const ok = await authenticate('Desbloqueie o Kalo com biometria');
+          if (!ok) return; // acesso negado — não seta usuarioId
+        }
         setUsuarioId(idSalvo);
         setPerfil((atual) => ({ ...atual, ...JSON.parse(perfilSalvo) }));
         carregarPlano(true);
@@ -239,7 +249,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     carregarSessao();
   }, [carregarPlano, carregarFrequencia, carregarComunidade]);
 
-  
+
   // Guarda tokens e perfil após login/cadastro e carrega o histórico de peso
   const iniciarSessao = async (usuario: any, novoToken: string, novoRefreshToken?: string) => {
     setUsuarioId(usuario.id);
@@ -282,7 +292,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await carregarComunidade();
   };
 
-  // Apaga a sessão do estado e do celular
+  // Apaga a sessão do estado e do celular (mantém flag de biometria)
   const encerrarSessao = async () => {
     setUsuarioId(null);
     setAmizades(AMIZADES_VAZIAS);
@@ -292,6 +302,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     convitesVistos.current = null;
     await AsyncStorage.multiRemove(['@kalo_token', '@kalo_refresh_token', '@kalo_id', '@kalo_perfil']);
   };
+
+  // Pede confirmação biométrica, persiste a flag e atualiza o estado
+  const habilitarBiometria = useCallback(async () => {
+    const suportado = await isBiometricSupported();
+    if (!suportado) {
+      Alert.alert('Biometria indisponível', 'Este dispositivo não possui biometria cadastrada.');
+      return;
+    }
+    const ok = await authenticate('Confirme sua identidade para ativar a biometria');
+    if (ok) {
+      await storeBiometricEnabled(true);
+      setBiometriaHabilitada(true);
+    }
+  }, []);
+
+  // Autentica via biometria (usado na abertura do app)
+  const desbloquearComBiometria = useCallback(async (): Promise<boolean> => {
+    return authenticate('Desbloqueie o Kalo com biometria');
+  }, []);
 
   // Último peso registrado
   const pesoAtual = pesos[pesos.length - 1]?.value || 0;
@@ -456,8 +485,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const valor = useMemo(() => ({
     usuarioId, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
     amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
+    biometriaHabilitada, habilitarBiometria, desbloquearComBiometria,
   }), [usuarioId, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
-    carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade]);
+    carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
+    biometriaHabilitada, habilitarBiometria, desbloquearComBiometria]);
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
 }
