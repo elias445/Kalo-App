@@ -84,18 +84,24 @@ function AppTabs() {
 
 import { initApiUrl } from './src/config/api';
 import { useEffect } from 'react';
+import { createNavigationContainerRef } from '@react-navigation/native';
+import { verificarFluxoBiometricoInicial } from './src/services/biometric';
+
+export const navigationRef = createNavigationContainerRef();
 
 // Raiz do app: estados globais e navegação
 export default function App() {
   useEffect(() => {
-    initApiUrl();
+    initApiUrl().then(() => {
+      verificarFluxoBiometricoInicial(navigationRef);
+    });
   }, []);
 
   return (
     <AppProvider>
       <RefeicoesProvider>
       <StatusBar style="light" />
-      <NavigationContainer theme={temaKalo}>
+      <NavigationContainer ref={navigationRef} theme={temaKalo}>
         {/* Fluxo principal: login, onboarding e app */}
         <Stack.Navigator screenOptions={opcoesStack} initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
