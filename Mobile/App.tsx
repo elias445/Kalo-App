@@ -82,8 +82,15 @@ function AppTabs() {
   );
 }
 
+import { initApiUrl } from './src/config/api';
+import { useEffect } from 'react';
+
 // Raiz do app: estados globais e navegação
 export default function App() {
+  useEffect(() => {
+    initApiUrl();
+  }, []);
+
   return (
     <AppProvider>
       <RefeicoesProvider>

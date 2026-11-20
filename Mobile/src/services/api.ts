@@ -1,7 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Endereço do servidor (definido no .env)
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+import { getApiUrl } from '../config/api';
 
 // Trava para evitar múltiplas chamadas simultâneas de renovação
 let promessaDeRenovacao: Promise<string | null> | null = null;
@@ -15,7 +13,8 @@ async function renovarTokenAcesso(): Promise<string | null> {
       const refreshToken = await AsyncStorage.getItem('@kalo_refresh_token');
       if (!refreshToken) return null;
 
-      const resposta = await fetch(`${API_URL}/usuarios/refresh`, {
+      const apiUrl = getApiUrl();
+      const resposta = await fetch(`${apiUrl}/usuarios/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -55,7 +54,8 @@ export const apiFetch = async (endpoint: string, options?: RequestInit) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let response = await fetch(`${API_URL}${endpoint}`, {
+  const apiUrl = getApiUrl();
+  let response = await fetch(`${apiUrl}${endpoint}`, {
     ...options,
     headers: {
       ...headers,
@@ -68,7 +68,7 @@ export const apiFetch = async (endpoint: string, options?: RequestInit) => {
     const novoToken = await renovarTokenAcesso();
     if (novoToken) {
       headers['Authorization'] = `Bearer ${novoToken}`;
-      response = await fetch(`${API_URL}${endpoint}`, {
+      response = await fetch(`${apiUrl}${endpoint}`, {
         ...options,
         headers: {
           ...headers,
