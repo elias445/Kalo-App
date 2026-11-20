@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useState, useCallback, useEf
 import { AppState as EstadoDoApp, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../services/api';
+import { avisarComunidade } from '../services/notifications';
 import { isBiometricSupported, authenticate, storeBiometricEnabled, getBiometricEnabled } from '../services/biometric';
 import { DiaTreino, ExercicioCatalogo, Frequencia, TreinoApi, dataLocal, montarPlano, planoVazio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
