@@ -43,7 +43,7 @@ export default function LoginScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        await iniciarSessao(data.usuario, data.token);
+        await iniciarSessao(data.usuario, data.token, data.refresh_token);
         if (data.usuario.onboarding_completo) {
           navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
         } else {
