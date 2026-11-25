@@ -63,6 +63,15 @@ class UsuarioPerfilUpdate(BaseModel):
         return dias
 
 
+# Dados recebidos ao renovar o token de acesso
+class UsuarioRefresh(BaseModel):
+    refresh_token: str
+
+# Resposta com novos tokens
+class TokenResponse(BaseModel):
+    token: str
+    refresh_token: str
+
 # Dados biométricos recebidos no onboarding
 class UsuarioOnboarding(BaseModel):
     sexo: str
