@@ -117,7 +117,6 @@ export default function CadastroScreen() {
       if (response.ok) {
         console.log("Cadastro de sucesso! Token:", data.token);
         await iniciarSessao(data.usuario, data.token, data.refresh_token);
-        navigation.navigate('Onboarding' as never);
       } else {
         Alert.alert('Erro no cadastro', data.detail || 'Não foi possível criar a conta.');
       }

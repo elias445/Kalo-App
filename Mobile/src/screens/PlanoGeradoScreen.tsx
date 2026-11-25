@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Flame, ArrowRight, Moon } from 'lucide-react-native';
 import Screen from '../components/Screen';
@@ -17,13 +16,12 @@ const ORDEM_SEMANA = [...DIAS.slice(1), DIAS[0]];
 
 // Tela do plano gerado: meta diária e treino da semana
 export default function PlanoGeradoScreen() {
-  const navigation = useNavigation();
-  const { perfil, metas, plano } = useApp();
+  const { perfil, metas, plano, concluirOnboarding } = useApp();
   const hoje = diaDeHoje();
 
-  // Entra no app e limpa o histórico de navegação
+  // Conclui o onboarding para liberar as abas principais
   const iniciar = () => {
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
+    concluirOnboarding();
   };
 
   // Parte de cada macro nas calorias (carbo e proteína: 4 kcal/g, gordura: 9 kcal/g)

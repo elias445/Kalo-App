@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert, useWindowDimensions } from 'react-
 import { LineChart } from 'react-native-gifted-charts';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, LogOut, Pencil, ScanFace, Plus, Dumbbell, Flame, TrendingDown, TrendingUp } from 'lucide-react-native';
-import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import { Badge, IconButton, SectionLabel } from '../components/UI';
@@ -31,10 +31,9 @@ export default function PerfilScreen() {
     }, [carregarFrequencia])
   );
 
-  // Encerra a sessão e volta para login
+  // Encerra a sessão e o Auth Gate volta para login
   const handleLogout = async () => {
     await encerrarSessao();
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
   };
 
   // Ativa ou informa que biometria já está ligada
