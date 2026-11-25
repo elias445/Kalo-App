@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, useWindowDimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, LogOut, Pencil, Plus, Dumbbell, Flame, TrendingDown, TrendingUp } from 'lucide-react-native';
+import { User, LogOut, Pencil, ScanFace, Plus, Dumbbell, Flame, TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
@@ -22,7 +22,7 @@ const formatarKg = (n: number) => n.toFixed(1).replace('.', ',');
 export default function PerfilScreen() {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
-  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia } = useApp();
+  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia, biometriaHabilitada, habilitarBiometria, encerrarSessao } = useApp();
 
   // Atualiza a frequência sempre que a aba é aberta
   useFocusEffect(
@@ -31,9 +31,19 @@ export default function PerfilScreen() {
     }, [carregarFrequencia])
   );
 
-  // Volta para a tela de login
-  const handleLogout = () => {
+  // Encerra a sessão e volta para login
+  const handleLogout = async () => {
+    await encerrarSessao();
     navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
+  };
+
+  // Ativa ou informa que biometria já está ligada
+  const handleBiometria = () => {
+    if (biometriaHabilitada) {
+      Alert.alert('Biometria', 'A autenticação por biometria já está ativada.');
+    } else {
+      habilitarBiometria();
+    }
   };
 
   // Dados e medidas do gráfico de peso
@@ -74,9 +84,14 @@ export default function PerfilScreen() {
           <Pencil color={colors.muted} size={18} strokeWidth={2} />
         </IconButton>
         <SectionLabel tone="muted">Perfil de atleta</SectionLabel>
-        <IconButton onPress={handleLogout} style={{ borderColor: 'rgba(244,63,94,0.3)' }}>
-          <LogOut color={colors.danger} size={18} strokeWidth={2} style={{ marginLeft: 2 }} />
-        </IconButton>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <IconButton onPress={handleBiometria}>
+            <ScanFace color={biometriaHabilitada ? colors.cyan : colors.muted} size={18} strokeWidth={2} />
+          </IconButton>
+          <IconButton onPress={handleLogout} style={{ borderColor: 'rgba(244,63,94,0.3)' }}>
+            <LogOut color={colors.danger} size={18} strokeWidth={2} style={{ marginLeft: 2 }} />
+          </IconButton>
+        </View>
       </View>
 
       <View className="items-center mb-6">

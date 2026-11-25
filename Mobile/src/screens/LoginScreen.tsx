@@ -15,7 +15,7 @@ export default function LoginScreen() {
   const [verSenha, setVerSenha] = useState(false);
   const navigation = useNavigation();
 
-  const { iniciarSessao } = useApp();
+  const { iniciarSessao, biometriaHabilitada, habilitarBiometria } = useApp();
 
   // Valida os campos, chama a API e segue para o app ou para o onboarding
   const handleLogin = async () => {
@@ -44,6 +44,19 @@ export default function LoginScreen() {
 
       if (response.ok) {
         await iniciarSessao(data.usuario, data.token, data.refresh_token);
+
+        // Oferece ativar biometria no primeiro login (se ainda não habilitada)
+        if (!biometriaHabilitada) {
+          Alert.alert(
+            'Desbloquear com biometria',
+            'Deseja usar digital ou Face ID para abrir o Kalo nas próximas vezes?',
+            [
+              { text: 'Agora não', style: 'cancel' },
+              { text: 'Ativar', onPress: habilitarBiometria },
+            ]
+          );
+        }
+
         if (data.usuario.onboarding_completo) {
           navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
         } else {
