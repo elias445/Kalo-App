@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Flame, ArrowRight, Moon } from 'lucide-react-native';
 import Screen from '../components/Screen';
@@ -21,9 +21,9 @@ export default function PlanoGeradoScreen() {
   const { perfil, metas, plano } = useApp();
   const hoje = diaDeHoje();
 
-  // Entra no app e limpa o histórico de navegação
+  // Avança para a configuração de lembretes de refeição
   const iniciar = () => {
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
+    navigation.navigate('OnboardingNotificacoes' as never);
   };
 
   // Parte de cada macro nas calorias (carbo e proteína: 4 kcal/g, gordura: 9 kcal/g)

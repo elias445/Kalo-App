@@ -14,6 +14,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import CadastroScreen from './src/screens/CadastroScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import PlanoGeradoScreen from './src/screens/PlanoGeradoScreen';
+import OnboardingNotificacoesScreen from './src/screens/OnboardingNotificacoesScreen';
 import ResumoRefeicoesScreen from './src/screens/ResumoRefeicoesScreen';
 import PesquisaAlimentosScreen from './src/screens/PesquisaAlimentosScreen';
 import DetalheRefeicaoScreen from './src/screens/DetalheRefeicaoScreen';
@@ -87,24 +88,25 @@ export default function App() {
   return (
     <AppProvider>
       <RefeicoesProvider>
-      <StatusBar style="light" />
-      <NavigationContainer theme={temaKalo}>
-        {/* Fluxo principal: login, onboarding e app */}
-        <Stack.Navigator screenOptions={opcoesStack} initialRouteName="Login">
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Cadastro" component={CadastroScreen} />
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="PlanoGerado" component={PlanoGeradoScreen} />
-          <Stack.Screen name="Main" component={AppTabs} />
-          <Stack.Screen name="TreinoDoDia" component={TreinoDoDiaScreen} />
-          <Stack.Screen name="EditarExercicio" component={EditarExercicioScreen} />
-          <Stack.Screen name="DetalheExercicio" component={DetalheExercicioScreen} />
-          <Stack.Screen name="RegistrarPeso" component={RegistrarPesoScreen} />
-          <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} />
-          <Stack.Screen name="AdicionarAmigo" component={AdicionarAmigoScreen} />
-          <Stack.Screen name="NovoDesafio" component={NovoDesafioScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+        <StatusBar style="light" />
+        <NavigationContainer theme={temaKalo}>
+          {/* Fluxo principal: login, onboarding e app */}
+          <Stack.Navigator screenOptions={opcoesStack} initialRouteName="Login">
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Cadastro" component={CadastroScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="PlanoGerado" component={PlanoGeradoScreen} />
+            <Stack.Screen name="OnboardingNotificacoes" component={OnboardingNotificacoesScreen} />
+            <Stack.Screen name="Main" component={AppTabs} />
+            <Stack.Screen name="TreinoDoDia" component={TreinoDoDiaScreen} />
+            <Stack.Screen name="EditarExercicio" component={EditarExercicioScreen} />
+            <Stack.Screen name="DetalheExercicio" component={DetalheExercicioScreen} />
+            <Stack.Screen name="RegistrarPeso" component={RegistrarPesoScreen} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} />
+            <Stack.Screen name="AdicionarAmigo" component={AdicionarAmigoScreen} />
+            <Stack.Screen name="NovoDesafio" component={NovoDesafioScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
       </RefeicoesProvider>
     </AppProvider>
   );

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { apiFetch } from '../services/api';
 import { AlimentoBusca, calcularKcal, porcao } from '../data/alimentos';
-import { useApp } from './AppContext'; 
+import { useApp } from './AppContext';
+import { dataLocal } from '../utils/datas';
 
 // Alimento registrado numa refeição, com kcal e macros
 export type ItemRefeicao = {
@@ -28,7 +29,7 @@ const RefeicoesContext = createContext<RefeicoesState | null>(null);
 
 // Provedor do diário: carrega, adiciona e remove alimentos pelo servidor
 export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
-  const { usuarioId } = useApp(); 
+  const { usuarioId } = useApp();
 
   const [refeicoes, setRefeicoes] = useState<Record<string, ItemRefeicao[]>>({
     'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
@@ -45,11 +46,11 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
 
   // Busca o diário no servidor e agrupa por refeição
   const carregarRefeicoes = useCallback(async () => {
-    if (!usuarioId) return; 
+    if (!usuarioId) return;
 
     try {
-      const dadosBanco = await apiFetch(`/refeicoes/usuario/${usuarioId}`); 
-      
+      const dadosBanco = await apiFetch(`/refeicoes/usuario/${usuarioId}?data=${dataLocal()}`);
+
       const refeicoesAgrupadas: Record<string, ItemRefeicao[]> = {
         'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
       };
@@ -72,7 +73,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Erro ao carregar refeições do banco:", error);
     }
-  }, [usuarioId]); 
+  }, [usuarioId]);
 
   // Recarrega o diário quando o usuário muda
   useEffect(() => {
@@ -81,17 +82,17 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
 
   // Calcula kcal e macros da porção, salva no servidor e atualiza a tela
   const adicionarAlimento = useCallback(async (refeicao: string, alimento: AlimentoBusca, gramas: number) => {
-    if (!usuarioId) return; 
+    if (!usuarioId) return;
 
     const nome = alimento.nome;
     const kcal = calcularKcal(alimento.kcal_100g, gramas);
-    
+
     try {
       const response = await apiFetch('/refeicoes/', {
         method: 'POST',
         body: JSON.stringify({
-          usuario_id: usuarioId, 
-          data_consumo: new Date().toISOString().split('T')[0],
+          usuario_id: usuarioId,
+          data_consumo: dataLocal(),
           tipo_refeicao: refeicao,
           nome_alimento: nome,
           quantidade_gramas: gramas,
@@ -105,7 +106,7 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
       setRefeicoes((atual) => ({
         ...atual,
         [refeicao]: [
-          ...(atual[refeicao] ?? []), 
+          ...(atual[refeicao] ?? []),
           {
             id: response.id || Date.now(),
             nome,
@@ -126,9 +127,9 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
   const removerAlimento = useCallback(async (refeicao: string, id: string | number) => {
     try {
       await apiFetch(`/refeicoes/${id}`, { method: 'DELETE' });
-      setRefeicoes((atual) => ({ 
-        ...atual, 
-        [refeicao]: (atual[refeicao] ?? []).filter((item) => item.id !== id) 
+      setRefeicoes((atual) => ({
+        ...atual,
+        [refeicao]: (atual[refeicao] ?? []).filter((item) => item.id !== id)
       }));
     } catch (error) {
       console.error("Erro ao deletar refeição na API:", error);
