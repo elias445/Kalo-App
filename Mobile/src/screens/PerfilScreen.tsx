@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions, Switch, Alert } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, LogOut, Pencil, Plus, Dumbbell, Flame, TrendingDown, TrendingUp, Bell, Clock } from 'lucide-react-native';
-import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
+import { User, LogOut, Pencil, ScanFace, Plus, Dumbbell, Flame, TrendingDown, TrendingUp, Bell, Clock } from 'lucide-react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import { Badge, IconButton, SectionLabel } from '../components/UI';
@@ -43,7 +43,7 @@ const formatarKg = (n: number) => n.toFixed(1).replace('.', ',');
 export default function PerfilScreen() {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
-  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia, usuarioId } = useApp();
+  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia, biometriaHabilitada, habilitarBiometria, encerrarSessao, usuarioId } = useApp();
 
   // Estado das preferências de notificação
   const [prefs, setPrefs] = useState<PreferenciasNotificacao>({ ...PREFERENCIAS_PADRAO });
@@ -55,322 +55,336 @@ export default function PerfilScreen() {
       carregarFrequencia();
       // Carrega as preferências de notificação do servidor
       if (usuarioId) {
-    apiFetch(`/notificacoes/${usuarioId}`)
-      .then((dados) => { if (dados) setPrefs(dados as PreferenciasNotificacao); })
-      .catch(() => { }); // Silencia: mantém os padrões
-  }
-}, [carregarFrequencia, usuarioId])
+        apiFetch(`/notificacoes/${usuarioId}`)
+          .then((dados) => { if (dados) setPrefs(dados as PreferenciasNotificacao); })
+          .catch(() => { }); // Silencia: mantém os padrões
+      }
+    }, [carregarFrequencia, usuarioId])
   );
 
-// Volta para a tela de login
-const handleLogout = () => {
-  navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
-};
+  // Encerra a sessão e o Auth Gate volta para login
+  const handleLogout = async () => {
+    await encerrarSessao();
+  };
 
-// Alterna o toggle de ativo/desativado de um lembrete
-const alternarAtivo = (chave: keyof PreferenciasNotificacao) => {
-  setPrefs((p) => ({ ...p, [chave]: !p[chave] }));
-};
+  // Ativa ou informa que biometria já está ligada
+  const handleBiometria = () => {
+    if (biometriaHabilitada) {
+      Alert.alert('Biometria', 'A autenticação por biometria já está ativada.');
+    } else {
+      habilitarBiometria();
+    }
+  };
 
-// Altera a hora de um lembrete
-const alterarHora = (chave: keyof PreferenciasNotificacao, delta: number) => {
-  setPrefs((p) => ({ ...p, [chave]: ajustarHora(p[chave] as number, delta) }));
-};
+  // Alterna o toggle de ativo/desativado de um lembrete
+  const alternarAtivo = (chave: keyof PreferenciasNotificacao) => {
+    setPrefs((p) => ({ ...p, [chave]: !p[chave] }));
+  };
 
-const alterarMinuto = (chave: keyof PreferenciasNotificacao, delta: number) => {
-  setPrefs((p) => ({ ...p, [chave]: ajustarMinuto(p[chave] as number, delta) }));
-};
+  // Altera a hora de um lembrete
+  const alterarHora = (chave: keyof PreferenciasNotificacao, delta: number) => {
+    setPrefs((p) => ({ ...p, [chave]: ajustarHora(p[chave] as number, delta) }));
+  };
 
-// Salva as preferências e reagenda os lembretes
-const salvarPreferencias = async () => {
-  if (!usuarioId) return;
-  setSalvandoPrefs(true);
-  try {
-    await apiFetch('/notificacoes/', {
-      method: 'PUT',
-      body: JSON.stringify({ usuario_id: usuarioId, ...prefs }),
-    });
-    await configurarLembretesDiarios(usuarioId);
-    Alert.alert('Lembretes', 'Lembretes atualizados com sucesso!');
-  } catch {
-    Alert.alert('Erro', 'Não foi possível salvar os lembretes. Tente novamente.');
-  } finally {
-    setSalvandoPrefs(false);
-  }
-};
+  const alterarMinuto = (chave: keyof PreferenciasNotificacao, delta: number) => {
+    setPrefs((p) => ({ ...p, [chave]: ajustarMinuto(p[chave] as number, delta) }));
+  };
 
-// Dados e medidas do gráfico de peso
-const variacao = pesoAtual - pesos[0].value;
-const emQueda = variacao <= 0;
-const valores = pesos.map((p) => p.value);
-const eixoMin = Math.floor((Math.min(...valores) - 2) / 5) * 5;
-const eixoSecoes = Math.max(1, Math.ceil((Math.max(...valores) - eixoMin) / 5));
-const larguraRotulosY = 52;
-const larguraGrafico = width - 48 - 36 - larguraRotulosY - 8;
-const espacamento = pesos.length > 1 ? (larguraGrafico - 28) / (pesos.length - 1) : 0;
+  // Salva as preferências e reagenda os lembretes
+  const salvarPreferencias = async () => {
+    if (!usuarioId) return;
+    setSalvandoPrefs(true);
+    try {
+      await apiFetch('/notificacoes/', {
+        method: 'PUT',
+        body: JSON.stringify({ usuario_id: usuarioId, ...prefs }),
+      });
+      await configurarLembretesDiarios(usuarioId);
+      Alert.alert('Lembretes', 'Lembretes atualizados com sucesso!');
+    } catch {
+      Alert.alert('Erro', 'Não foi possível salvar os lembretes. Tente novamente.');
+    } finally {
+      setSalvandoPrefs(false);
+    }
+  };
 
-// Dados do calendário do mês atual
-const hoje = new Date();
-const ano = hoje.getFullYear();
-const mes = hoje.getMonth();
-const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  // Dados e medidas do gráfico de peso
+  const variacao = pesoAtual - pesos[0].value;
+  const emQueda = variacao <= 0;
+  const valores = pesos.map((p) => p.value);
+  const eixoMin = Math.floor((Math.min(...valores) - 2) / 5) * 5;
+  const eixoSecoes = Math.max(1, Math.ceil((Math.max(...valores) - eixoMin) / 5));
+  const larguraRotulosY = 52;
+  const larguraGrafico = width - 48 - 36 - larguraRotulosY - 8;
+  const espacamento = pesos.length > 1 ? (larguraGrafico - 28) / (pesos.length - 1) : 0;
 
-// Frequência real vinda do servidor: dias treinados, consistência (feitos dividido pelos planejados) e sequência
-const treinou = (d: number) => !!frequencia?.dias_treinados.includes(d);
-const totalTreinados = frequencia?.total_treinos_mes ?? 0;
-const consistencia = frequencia?.consistencia ?? 100;
-const sequencia = frequencia?.sequencia ?? 0;
+  // Dados do calendário do mês atual
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
 
-// Calendário em semanas de 7 colunas, de domingo a sábado
-const celulas: (number | null)[] = [
-  ...Array.from({ length: primeiroDiaSemana }, () => null),
-  ...Array.from({ length: diasNoMes }, (_, i) => i + 1),
-];
-while (celulas.length % 7 !== 0) celulas.push(null);
-const semanas = Array.from({ length: celulas.length / 7 }, (_, i) => celulas.slice(i * 7, i * 7 + 7));
+  // Frequência real vinda do servidor: dias treinados, consistência (feitos dividido pelos planejados) e sequência
+  const treinou = (d: number) => !!frequencia?.dias_treinados.includes(d);
+  const totalTreinados = frequencia?.total_treinos_mes ?? 0;
+  const consistencia = frequencia?.consistencia ?? 100;
+  const sequencia = frequencia?.sequencia ?? 0;
 
-return (
-  <Screen tabbed>
-    <View className="flex-row justify-between items-center mb-6">
-      <IconButton onPress={() => navigation.navigate('EditarPerfil')}>
-        <Pencil color={colors.muted} size={18} strokeWidth={2} />
-      </IconButton>
-      <SectionLabel tone="muted">Perfil de atleta</SectionLabel>
-      <IconButton onPress={handleLogout} style={{ borderColor: 'rgba(244,63,94,0.3)' }}>
-        <LogOut color={colors.danger} size={18} strokeWidth={2} style={{ marginLeft: 2 }} />
-      </IconButton>
-    </View>
+  // Calendário em semanas de 7 colunas, de domingo a sábado
+  const celulas: (number | null)[] = [
+    ...Array.from({ length: primeiroDiaSemana }, () => null),
+    ...Array.from({ length: diasNoMes }, (_, i) => i + 1),
+  ];
+  while (celulas.length % 7 !== 0) celulas.push(null);
+  const semanas = Array.from({ length: celulas.length / 7 }, (_, i) => celulas.slice(i * 7, i * 7 + 7));
 
-    <View className="items-center mb-6">
-      <View style={[{ width: 108, height: 108, borderRadius: 54 }, glow(colors.cyan, 0.45, 22)]}>
-        <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 108, height: 108, borderRadius: 54, alignItems: 'center', justifyContent: 'center' }}>
-          <View className="bg-ink items-center justify-center" style={{ width: 98, height: 98, borderRadius: 49 }}>
-            <View className="bg-surface2 items-center justify-center" style={{ width: 90, height: 90, borderRadius: 45 }}>
-              <User color={colors.cyan} size={44} strokeWidth={2} />
+  return (
+    <Screen tabbed>
+      <View className="flex-row justify-between items-center mb-6">
+        <IconButton onPress={() => navigation.navigate('EditarPerfil')}>
+          <Pencil color={colors.muted} size={18} strokeWidth={2} />
+        </IconButton>
+        <SectionLabel tone="muted">Perfil de atleta</SectionLabel>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <IconButton onPress={handleBiometria}>
+            <ScanFace color={biometriaHabilitada ? colors.cyan : colors.muted} size={18} strokeWidth={2} />
+          </IconButton>
+          <IconButton onPress={handleLogout} style={{ borderColor: 'rgba(244,63,94,0.3)' }}>
+            <LogOut color={colors.danger} size={18} strokeWidth={2} style={{ marginLeft: 2 }} />
+          </IconButton>
+        </View>
+      </View>
+
+      <View className="items-center mb-6">
+        <View style={[{ width: 108, height: 108, borderRadius: 54 }, glow(colors.cyan, 0.45, 22)]}>
+          <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 108, height: 108, borderRadius: 54, alignItems: 'center', justifyContent: 'center' }}>
+            <View className="bg-ink items-center justify-center" style={{ width: 98, height: 98, borderRadius: 49 }}>
+              <View className="bg-surface2 items-center justify-center" style={{ width: 90, height: 90, borderRadius: 45 }}>
+                <User color={colors.cyan} size={44} strokeWidth={2} />
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
+        <View className="flex-row items-center mt-5" style={{ gap: 6 }}>
+          <Text className="text-white text-2xl font-extrabold">{perfil.nome}</Text>
+        </View>
+        <Text className="text-cyan text-xs font-bold mt-1.5">Meta: {perfil.objetivo}</Text>
       </View>
-      <View className="flex-row items-center mt-5" style={{ gap: 6 }}>
-        <Text className="text-white text-2xl font-extrabold">{perfil.nome}</Text>
-      </View>
-      <Text className="text-cyan text-xs font-bold mt-1.5">Meta: {perfil.objetivo}</Text>
-    </View>
 
-    <View className="flex-row mb-4" style={{ gap: 10 }}>
-      <Card className="flex-1 items-center py-4 rounded-2xl">
-        <Dumbbell color={colors.cyan} size={18} strokeWidth={2} />
-        <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>TREINOS</Text>
-        <Text className="text-white font-extrabold text-xl mt-0.5">{frequencia?.total_treinos ?? 0}</Text>
+      <View className="flex-row mb-4" style={{ gap: 10 }}>
+        <Card className="flex-1 items-center py-4 rounded-2xl">
+          <Dumbbell color={colors.cyan} size={18} strokeWidth={2} />
+          <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>TREINOS</Text>
+          <Text className="text-white font-extrabold text-xl mt-0.5">{frequencia?.total_treinos ?? 0}</Text>
+        </Card>
+        <Card className="flex-1 items-center py-4 rounded-2xl">
+          <Flame color={colors.cyan} size={18} strokeWidth={2} />
+          <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>SEQUÊNCIA</Text>
+          <Text className="text-white font-extrabold text-xl mt-0.5">{sequencia} <Text className="text-muted text-xs">{sequencia === 1 ? 'dia' : 'dias'}</Text></Text>
+        </Card>
+        <Card className="flex-1 items-center py-4 rounded-2xl">
+          {emQueda ? <TrendingDown color={colors.cyan} size={18} strokeWidth={2} /> : <TrendingUp color={colors.cyan} size={18} strokeWidth={2} />}
+          <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>VARIAÇÃO</Text>
+          <Text className="text-cyan font-extrabold text-xl mt-0.5">{variacao > 0 ? '+' : ''}{formatarKg(variacao)} <Text className="text-muted text-xs">kg</Text></Text>
+        </Card>
+      </View>
+
+      <Card highlight className="p-[18px] mb-4">
+        <View className="flex-row justify-between items-center mb-4">
+          <SectionLabel tone="muted">Peso corporal</SectionLabel>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('RegistrarPeso')}
+            activeOpacity={0.8}
+            className="flex-row items-center"
+            style={{ gap: 4, paddingHorizontal: 12, height: 32, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,209,255,0.35)', backgroundColor: 'rgba(0,209,255,0.08)' }}
+          >
+            <Plus color={colors.cyan} size={14} strokeWidth={3} />
+            <Text className="text-cyan text-xs font-bold">Registrar</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="flex-row items-baseline mb-4" style={{ gap: 6 }}>
+          <Text className="text-white font-extrabold" style={{ fontSize: 36, lineHeight: 44 }}>{formatarKg(pesoAtual)}</Text>
+          <Text className="text-muted font-bold" style={{ fontSize: 16, lineHeight: 22 }}>kg</Text>
+        </View>
+
+        <View style={{ marginLeft: -6 }}>
+          <LineChart
+            data={pesos.map((p) => ({ value: p.value, label: p.label }))}
+            areaChart
+            curved
+            width={larguraGrafico}
+            height={140}
+            initialSpacing={14}
+            endSpacing={14}
+            spacing={espacamento}
+            thickness={3}
+            color={colors.cyan}
+            startFillColor={colors.cyan}
+            endFillColor={colors.cyan}
+            startOpacity={0.3}
+            endOpacity={0.01}
+            dataPointsColor={colors.cyan}
+            dataPointsRadius={4}
+            hideRules
+            yAxisThickness={0}
+            xAxisThickness={0}
+            yAxisLabelWidth={larguraRotulosY}
+            yAxisLabelSuffix=" kg"
+            yAxisTextStyle={{ color: colors.dim, fontSize: 10 }}
+            xAxisLabelTextStyle={{ color: colors.dim, fontSize: 10 }}
+            yAxisOffset={eixoMin}
+            stepValue={5}
+            noOfSections={eixoSecoes}
+            disableScroll
+          />
+        </View>
       </Card>
-      <Card className="flex-1 items-center py-4 rounded-2xl">
-        <Flame color={colors.cyan} size={18} strokeWidth={2} />
-        <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>SEQUÊNCIA</Text>
-        <Text className="text-white font-extrabold text-xl mt-0.5">{sequencia} <Text className="text-muted text-xs">{sequencia === 1 ? 'dia' : 'dias'}</Text></Text>
-      </Card>
-      <Card className="flex-1 items-center py-4 rounded-2xl">
-        {emQueda ? <TrendingDown color={colors.cyan} size={18} strokeWidth={2} /> : <TrendingUp color={colors.cyan} size={18} strokeWidth={2} />}
-        <Text className="text-muted text-[10px] font-bold mt-2" style={{ letterSpacing: 1.4 }}>VARIAÇÃO</Text>
-        <Text className="text-cyan font-extrabold text-xl mt-0.5">{variacao > 0 ? '+' : ''}{formatarKg(variacao)} <Text className="text-muted text-xs">kg</Text></Text>
-      </Card>
-    </View>
 
-    <Card highlight className="p-[18px] mb-4">
-      <View className="flex-row justify-between items-center mb-4">
-        <SectionLabel tone="muted">Peso corporal</SectionLabel>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('RegistrarPeso')}
-          activeOpacity={0.8}
-          className="flex-row items-center"
-          style={{ gap: 4, paddingHorizontal: 12, height: 32, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,209,255,0.35)', backgroundColor: 'rgba(0,209,255,0.08)' }}
-        >
-          <Plus color={colors.cyan} size={14} strokeWidth={3} />
-          <Text className="text-cyan text-xs font-bold">Registrar</Text>
-        </TouchableOpacity>
-      </View>
+      <Card className="p-[18px]">
+        <View className="flex-row justify-between items-center mb-1">
+          <SectionLabel tone="muted">Frequência de treino</SectionLabel>
+          <Badge tone="cyan" label={`${totalTreinados} treinos`} icon={<Flame color={colors.cyan} size={12} strokeWidth={2.4} />} />
+        </View>
+        <Text className="text-dim text-xs mb-4">Treinos do mês de {MESES[mes]}</Text>
 
-      <View className="flex-row items-baseline mb-4" style={{ gap: 6 }}>
-        <Text className="text-white font-extrabold" style={{ fontSize: 36, lineHeight: 44 }}>{formatarKg(pesoAtual)}</Text>
-        <Text className="text-muted font-bold" style={{ fontSize: 16, lineHeight: 22 }}>kg</Text>
-      </View>
+        <View className="flex-row mb-2">
+          {CABECALHO_SEMANA.map((d, i) => (
+            <Text key={i} className="text-white text-sm font-bold text-center" style={{ flex: 1 }}>{d}</Text>
+          ))}
+        </View>
 
-      <View style={{ marginLeft: -6 }}>
-        <LineChart
-          data={pesos.map((p) => ({ value: p.value, label: p.label }))}
-          areaChart
-          curved
-          width={larguraGrafico}
-          height={140}
-          initialSpacing={14}
-          endSpacing={14}
-          spacing={espacamento}
-          thickness={3}
-          color={colors.cyan}
-          startFillColor={colors.cyan}
-          endFillColor={colors.cyan}
-          startOpacity={0.3}
-          endOpacity={0.01}
-          dataPointsColor={colors.cyan}
-          dataPointsRadius={4}
-          hideRules
-          yAxisThickness={0}
-          xAxisThickness={0}
-          yAxisLabelWidth={larguraRotulosY}
-          yAxisLabelSuffix=" kg"
-          yAxisTextStyle={{ color: colors.dim, fontSize: 10 }}
-          xAxisLabelTextStyle={{ color: colors.dim, fontSize: 10 }}
-          yAxisOffset={eixoMin}
-          stepValue={5}
-          noOfSections={eixoSecoes}
-          disableScroll
-        />
-      </View>
-    </Card>
-
-    <Card className="p-[18px]">
-      <View className="flex-row justify-between items-center mb-1">
-        <SectionLabel tone="muted">Frequência de treino</SectionLabel>
-        <Badge tone="cyan" label={`${totalTreinados} treinos`} icon={<Flame color={colors.cyan} size={12} strokeWidth={2.4} />} />
-      </View>
-      <Text className="text-dim text-xs mb-4">Treinos do mês de {MESES[mes]}</Text>
-
-      <View className="flex-row mb-2">
-        {CABECALHO_SEMANA.map((d, i) => (
-          <Text key={i} className="text-white text-sm font-bold text-center" style={{ flex: 1 }}>{d}</Text>
-        ))}
-      </View>
-
-      {semanas.map((semana, linha) => (
-        <View key={linha} className="flex-row" style={{ height: 40 }}>
-          {semana.map((dia, coluna) => {
-            if (dia === null) return <View key={coluna} style={{ flex: 1 }} />;
-            const feito = treinou(dia);
-            return (
-              <View key={coluna} className="items-center justify-center" style={{ flex: 1 }}>
-                <View
-                  key={feito ? 'treinado' : 'livre'}
-                  className="items-center justify-center"
-                  style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: feito ? colors.cyan : 'transparent' }}
-                >
-                  <Text className="font-bold text-sm" style={{ color: feito ? colors.ink : colors.muted }}>{dia}</Text>
+        {semanas.map((semana, linha) => (
+          <View key={linha} className="flex-row" style={{ height: 40 }}>
+            {semana.map((dia, coluna) => {
+              if (dia === null) return <View key={coluna} style={{ flex: 1 }} />;
+              const feito = treinou(dia);
+              return (
+                <View key={coluna} className="items-center justify-center" style={{ flex: 1 }}>
+                  <View
+                    key={feito ? 'treinado' : 'livre'}
+                    className="items-center justify-center"
+                    style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: feito ? colors.cyan : 'transparent' }}
+                  >
+                    <Text className="font-bold text-sm" style={{ color: feito ? colors.ink : colors.muted }}>{dia}</Text>
+                  </View>
                 </View>
+              );
+            })}
+          </View>
+        ))}
+
+        <View className="flex-row mt-4" style={{ gap: 14 }}>
+          <View className="flex-row items-center" style={{ gap: 5 }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.cyan }} />
+            <Text className="text-muted text-[11px]">Treinado</Text>
+          </View>
+          <View className="flex-row items-center" style={{ gap: 5 }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.dim }} />
+            <Text className="text-muted text-[11px]">Descanso</Text>
+          </View>
+        </View>
+
+        <View className="flex-row mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.line }}>
+          <View className="flex-1 items-center">
+            <Text className="text-muted text-[10px] font-bold" style={{ letterSpacing: 1.4 }}>CONSISTÊNCIA</Text>
+            <Text className="text-cyan font-extrabold text-xl mt-1">{consistencia}%</Text>
+          </View>
+          <View style={{ width: 1, backgroundColor: colors.line }} />
+          <View className="flex-1 items-center">
+            <Text className="text-muted text-[10px] font-bold" style={{ letterSpacing: 1.4 }}>SEQUÊNCIA</Text>
+            <Text className="text-cyan font-extrabold text-xl mt-1">{sequencia} <Text className="text-muted text-xs">{sequencia === 1 ? 'dia' : 'dias'}</Text></Text>
+          </View>
+        </View>
+      </Card>
+
+      {/* ── Seção: Lembretes de Refeição ── */}
+      <Card className="p-[18px] mt-4 mb-4">
+        <View className="flex-row justify-between items-center mb-4">
+          <SectionLabel tone="muted">Lembretes de refeição</SectionLabel>
+          <Bell size={16} color={colors.muted} strokeWidth={2} />
+        </View>
+
+        <View style={{ gap: 10 }}>
+          {REFEICOES_PERFIL.map((r) => {
+            const ativo = prefs[r.ativo] as boolean;
+            const hora = prefs[r.hora] as number;
+            const minuto = prefs[r.minuto] as number;
+            return (
+              <View
+                key={r.nome}
+                style={{
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: ativo ? 'rgba(0,209,255,0.25)' : colors.line,
+                  backgroundColor: ativo ? 'rgba(0,209,255,0.04)' : 'transparent',
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  opacity: ativo ? 1 : 0.55,
+                }}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center" style={{ gap: 8 }}>
+                    <Text style={{ fontSize: 16 }}>{r.emoji}</Text>
+                    <Text className="text-white font-bold text-sm">{r.nome}</Text>
+                    {ativo && (
+                      <Text className="text-muted text-xs">
+                        {String(hora).padStart(2, '0')}:{String(minuto).padStart(2, '0')}
+                      </Text>
+                    )}
+                  </View>
+                  <Switch
+                    value={ativo}
+                    onValueChange={() => alternarAtivo(r.ativo)}
+                    trackColor={{ false: colors.line, true: colors.cyan }}
+                    thumbColor={ativo ? colors.ink : colors.muted}
+                  />
+                </View>
+                {ativo && (
+                  <View className="flex-row items-center justify-center mt-2" style={{ gap: 6 }}>
+                    <Clock size={12} color={colors.dim} />
+                    <View className="flex-row items-center" style={{ gap: 4 }}>
+                      <TouchableOpacity onPress={() => alterarHora(r.hora, -1)} className="px-2 py-0.5" activeOpacity={0.7}>
+                        <Text className="text-cyan font-bold text-base">‹</Text>
+                      </TouchableOpacity>
+                      <Text className="text-white font-extrabold text-xs w-6 text-center">{String(hora).padStart(2, '0')}</Text>
+                      <TouchableOpacity onPress={() => alterarHora(r.hora, 1)} className="px-2 py-0.5" activeOpacity={0.7}>
+                        <Text className="text-cyan font-bold text-base">›</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text className="text-muted text-xs font-bold">:</Text>
+                    <View className="flex-row items-center" style={{ gap: 4 }}>
+                      <TouchableOpacity onPress={() => alterarMinuto(r.minuto, -5)} className="px-2 py-0.5" activeOpacity={0.7}>
+                        <Text className="text-cyan font-bold text-base">‹</Text>
+                      </TouchableOpacity>
+                      <Text className="text-white font-extrabold text-xs w-6 text-center">{String(minuto).padStart(2, '0')}</Text>
+                      <TouchableOpacity onPress={() => alterarMinuto(r.minuto, 5)} className="px-2 py-0.5" activeOpacity={0.7}>
+                        <Text className="text-cyan font-bold text-base">›</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
             );
           })}
         </View>
-      ))}
 
-      <View className="flex-row mt-4" style={{ gap: 14 }}>
-        <View className="flex-row items-center" style={{ gap: 5 }}>
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.cyan }} />
-          <Text className="text-muted text-[11px]">Treinado</Text>
-        </View>
-        <View className="flex-row items-center" style={{ gap: 5 }}>
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.dim }} />
-          <Text className="text-muted text-[11px]">Descanso</Text>
-        </View>
-      </View>
-
-      <View className="flex-row mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.line }}>
-        <View className="flex-1 items-center">
-          <Text className="text-muted text-[10px] font-bold" style={{ letterSpacing: 1.4 }}>CONSISTÊNCIA</Text>
-          <Text className="text-cyan font-extrabold text-xl mt-1">{consistencia}%</Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: colors.line }} />
-        <View className="flex-1 items-center">
-          <Text className="text-muted text-[10px] font-bold" style={{ letterSpacing: 1.4 }}>SEQUÊNCIA</Text>
-          <Text className="text-cyan font-extrabold text-xl mt-1">{sequencia} <Text className="text-muted text-xs">{sequencia === 1 ? 'dia' : 'dias'}</Text></Text>
-        </View>
-      </View>
-    </Card>
-
-    {/* ── Seção: Lembretes de Refeição ── */}
-    <Card className="p-[18px] mt-4 mb-4">
-      <View className="flex-row justify-between items-center mb-4">
-        <SectionLabel tone="muted">Lembretes de refeição</SectionLabel>
-        <Bell size={16} color={colors.muted} strokeWidth={2} />
-      </View>
-
-      <View style={{ gap: 10 }}>
-        {REFEICOES_PERFIL.map((r) => {
-          const ativo = prefs[r.ativo] as boolean;
-          const hora = prefs[r.hora] as number;
-          const minuto = prefs[r.minuto] as number;
-          return (
-            <View
-              key={r.nome}
-              style={{
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: ativo ? 'rgba(0,209,255,0.25)' : colors.line,
-                backgroundColor: ativo ? 'rgba(0,209,255,0.04)' : 'transparent',
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                opacity: ativo ? 1 : 0.55,
-              }}
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center" style={{ gap: 8 }}>
-                  <Text style={{ fontSize: 16 }}>{r.emoji}</Text>
-                  <Text className="text-white font-bold text-sm">{r.nome}</Text>
-                  {ativo && (
-                    <Text className="text-muted text-xs">
-                      {String(hora).padStart(2, '0')}:{String(minuto).padStart(2, '0')}
-                    </Text>
-                  )}
-                </View>
-                <Switch
-                  value={ativo}
-                  onValueChange={() => alternarAtivo(r.ativo)}
-                  trackColor={{ false: colors.line, true: colors.cyan }}
-                  thumbColor={ativo ? colors.ink : colors.muted}
-                />
-              </View>
-              {ativo && (
-                <View className="flex-row items-center justify-center mt-2" style={{ gap: 6 }}>
-                  <Clock size={12} color={colors.dim} />
-                  <View className="flex-row items-center" style={{ gap: 4 }}>
-                    <TouchableOpacity onPress={() => alterarHora(r.hora, -1)} className="px-2 py-0.5" activeOpacity={0.7}>
-                      <Text className="text-cyan font-bold text-base">‹</Text>
-                    </TouchableOpacity>
-                    <Text className="text-white font-extrabold text-xs w-6 text-center">{String(hora).padStart(2, '0')}</Text>
-                    <TouchableOpacity onPress={() => alterarHora(r.hora, 1)} className="px-2 py-0.5" activeOpacity={0.7}>
-                      <Text className="text-cyan font-bold text-base">›</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Text className="text-muted text-xs font-bold">:</Text>
-                  <View className="flex-row items-center" style={{ gap: 4 }}>
-                    <TouchableOpacity onPress={() => alterarMinuto(r.minuto, -5)} className="px-2 py-0.5" activeOpacity={0.7}>
-                      <Text className="text-cyan font-bold text-base">‹</Text>
-                    </TouchableOpacity>
-                    <Text className="text-white font-extrabold text-xs w-6 text-center">{String(minuto).padStart(2, '0')}</Text>
-                    <TouchableOpacity onPress={() => alterarMinuto(r.minuto, 5)} className="px-2 py-0.5" activeOpacity={0.7}>
-                      <Text className="text-cyan font-bold text-base">›</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </View>
-          );
-        })}
-      </View>
-
-      <TouchableOpacity
-        onPress={salvarPreferencias}
-        activeOpacity={0.8}
-        className="mt-5 items-center justify-center"
-        style={{
-          height: 48, borderRadius: 16,
-          backgroundColor: salvandoPrefs ? colors.surface : 'rgba(0,209,255,0.12)',
-          borderWidth: 1, borderColor: 'rgba(0,209,255,0.3)',
-        }}
-      >
-        <Text className="text-cyan font-bold text-sm">
-          {salvandoPrefs ? 'Salvando...' : 'Salvar lembretes'}
-        </Text>
-      </TouchableOpacity>
-    </Card>
-  </Screen>
-);
+        <TouchableOpacity
+          onPress={salvarPreferencias}
+          activeOpacity={0.8}
+          className="mt-5 items-center justify-center"
+          style={{
+            height: 48, borderRadius: 16,
+            backgroundColor: salvandoPrefs ? colors.surface : 'rgba(0,209,255,0.12)',
+            borderWidth: 1, borderColor: 'rgba(0,209,255,0.3)',
+          }}
+        >
+          <Text className="text-cyan font-bold text-sm">
+            {salvandoPrefs ? 'Salvando...' : 'Salvar lembretes'}
+          </Text>
+        </TouchableOpacity>
+      </Card>
+    </Screen>
+  );
 }

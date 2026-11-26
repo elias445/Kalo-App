@@ -1,11 +1,12 @@
 import "./global.css";
 import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { AppProvider } from './src/context/AppContext';
+import { AppProvider, useApp } from './src/context/AppContext';
 import { colors } from './src/theme';
 import TabBar from './src/components/TabBar';
 
@@ -83,20 +84,34 @@ function AppTabs() {
   );
 }
 
-// Raiz do app: estados globais e navegação
-export default function App() {
+// Gate de autenticação: exibe carregamento, fluxo de login, onboarding ou app principal
+function NavegadorRaiz() {
+  const { usuarioId, carregandoSessao, onboardingCompleto } = useApp();
+
+  if (carregandoSessao) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={colors.cyan} />
+      </View>
+    );
+  }
+
   return (
-    <AppProvider>
-      <RefeicoesProvider>
-        <StatusBar style="light" />
-        <NavigationContainer theme={temaKalo}>
-          {/* Fluxo principal: login, onboarding e app */}
-          <Stack.Navigator screenOptions={opcoesStack} initialRouteName="Login">
+    <NavigationContainer theme={temaKalo}>
+      <Stack.Navigator screenOptions={opcoesStack}>
+        {!usuarioId ? (
+          <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Cadastro" component={CadastroScreen} />
+          </>
+        ) : !onboardingCompleto ? (
+          <>
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="PlanoGerado" component={PlanoGeradoScreen} />
             <Stack.Screen name="OnboardingNotificacoes" component={OnboardingNotificacoesScreen} />
+          </>
+        ) : (
+          <>
             <Stack.Screen name="Main" component={AppTabs} />
             <Stack.Screen name="TreinoDoDia" component={TreinoDoDiaScreen} />
             <Stack.Screen name="EditarExercicio" component={EditarExercicioScreen} />
@@ -105,8 +120,21 @@ export default function App() {
             <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} />
             <Stack.Screen name="AdicionarAmigo" component={AdicionarAmigoScreen} />
             <Stack.Screen name="NovoDesafio" component={NovoDesafioScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+            <Stack.Screen name="OnboardingNotificacoes" component={OnboardingNotificacoesScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// Raiz do app: estados globais e navegação
+export default function App() {
+  return (
+    <AppProvider>
+      <RefeicoesProvider>
+        <StatusBar style="light" />
+        <NavegadorRaiz />
       </RefeicoesProvider>
     </AppProvider>
   );

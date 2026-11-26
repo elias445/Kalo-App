@@ -5,6 +5,7 @@
     "scheme": "kalo",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/android-icon-foreground.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true

@@ -17,7 +17,7 @@ const ORDEM_SEMANA = [...DIAS.slice(1), DIAS[0]];
 
 // Tela do plano gerado: meta diária e treino da semana
 export default function PlanoGeradoScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { perfil, metas, plano } = useApp();
   const hoje = diaDeHoje();
 

@@ -55,19 +55,21 @@ export function RefeicoesProvider({ children }: { children: React.ReactNode }) {
         'Café da manhã': [], 'Lanche da manhã': [], 'Almoço': [], 'Lanche da tarde': [], 'Jantar': [], 'Ceia': [],
       };
 
-      dadosBanco.forEach((item: any) => {
-        if (refeicoesAgrupadas[item.tipo_refeicao]) {
-          refeicoesAgrupadas[item.tipo_refeicao].push({
-            id: item.id,
-            nome: item.nome_alimento,
-            gramas: item.quantidade_gramas,
-            kcal: item.calorias,
-            carboidratos: item.carboidratos ?? 0,
-            proteinas: item.proteinas ?? 0,
-            gorduras: item.gorduras ?? 0,
-          });
-        }
-      });
+      if (Array.isArray(dadosBanco)) {
+        dadosBanco.forEach((item: any) => {
+          if (refeicoesAgrupadas[item.tipo_refeicao]) {
+            refeicoesAgrupadas[item.tipo_refeicao].push({
+              id: item.id,
+              nome: item.nome_alimento,
+              gramas: item.quantidade_gramas,
+              kcal: item.calorias,
+              carboidratos: item.carboidratos ?? 0,
+              proteinas: item.proteinas ?? 0,
+              gorduras: item.gorduras ?? 0,
+            });
+          }
+        });
+      }
 
       setRefeicoes(refeicoesAgrupadas);
     } catch (error) {

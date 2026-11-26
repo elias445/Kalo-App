@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { AppState as EstadoDoApp } from 'react-native';
+import { AppState as EstadoDoApp, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../services/api';
+import { getApiUrl, initApiUrl } from '../config/api';
 import { avisarComunidade } from '../services/notifications';
+import { isBiometricSupported, authenticate, storeBiometricEnabled, getBiometricEnabled, limparTokensLogout } from '../services/biometric';
 import { DiaTreino, ExercicioCatalogo, Frequencia, TreinoApi, dataLocal, montarPlano, planoVazio } from '../data/treino';
 import { calcularMetas, Metas } from '../utils/metas';
 import { diasPadrao } from '../data/perfil';
@@ -18,9 +20,12 @@ export const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lan
 
 // Tudo que o estado global oferece às telas
 type AppState = {
-  usuarioId: string | null; 
-  iniciarSessao: (usuario: any, novoToken: string) => Promise<void>; 
-  encerrarSessao: () => Promise<void>; 
+  usuarioId: string | null;
+  carregandoSessao: boolean;
+  onboardingCompleto: boolean;
+  concluirOnboarding: () => Promise<void>;
+  iniciarSessao: (usuario: any, novoToken: string, novoRefreshToken?: string) => Promise<void>;
+  encerrarSessao: () => Promise<void>;
   perfil: Perfil;
   atualizarPerfil: (dados: Partial<Perfil>) => void;
   pesos: RegistroPeso[];
@@ -38,10 +43,8 @@ type AppState = {
   amizades: Amizades;
   desafios: Desafios;
   feed: Atividade[];
-  // Ainda há atividades mais antigas para carregar
   feedTemMais: boolean;
   carregarMaisFeed: () => Promise<void>;
-  // Convites de amizade e de desafio que esperam resposta (bolinha na aba Comunidade)
   convitesPendentes: number;
   carregarComunidade: () => Promise<void>;
   convidarAmigo: (dados: { usuario?: string; codigo?: string }) => Promise<Resultado>;
@@ -51,6 +54,10 @@ type AppState = {
   responderConviteDesafio: (desafioId: string, aceitar: boolean) => Promise<boolean>;
   carregarRanking: (desafioId: string) => Promise<LinhaRanking[] | null>;
   curtirAtividade: (atividadeId: string) => Promise<void>;
+  // Biometria
+  biometriaHabilitada: boolean;
+  habilitarBiometria: () => Promise<void>;
+  desbloquearComBiometria: () => Promise<boolean>;
 };
 
 // Resultado de uma ação no servidor: deu certo ou a mensagem de erro que ele devolveu
@@ -81,6 +88,9 @@ const rotuloHoje = () => {
 // Provedor do estado global: sessão, perfil, peso, treino e comunidade
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [carregandoSessao, setCarregandoSessao] = useState(true);
+  const [onboardingCompleto, setOnboardingCompleto] = useState(false);
+  const [biometriaHabilitada, setBiometriaHabilitada] = useState(false);
 
   // Perfil (valores iniciais até o login)
   const [perfil, setPerfil] = useState<Perfil>({
@@ -221,27 +231,93 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Ao abrir o app, restaura a sessão salva no celular
+  // Busca o histórico de peso salvo no servidor para o gráfico do perfil
+  const carregarPesosUsuario = useCallback(async (id: string) => {
+    try {
+      const medidas = await apiFetch(`/medidas/usuario/${id}`);
+      if (Array.isArray(medidas) && medidas.length > 0) {
+        setPesos(medidas.map((m: any) => ({ value: m.peso_kg, label: rotuloDeData(m.data_registro) })));
+      }
+    } catch (erro) {
+      console.error('Erro ao carregar o histórico de peso:', erro);
+    }
+  }, []);
+
+  // Ao abrir o app, restaura a sessão salva no celular com biometria única e renovação de token
   useEffect(() => {
     async function carregarSessao() {
-      const tokenSalvo = await AsyncStorage.getItem('@kalo_token');
-      const idSalvo = await AsyncStorage.getItem('@kalo_id');
-      const perfilSalvo = await AsyncStorage.getItem('@kalo_perfil');
+      try {
+        await initApiUrl();
+        const [tokenSalvo, refreshSalvo, idSalvo, perfilSalvo, bioHabilitada] = await Promise.all([
+          AsyncStorage.getItem('@kalo_token'),
+          AsyncStorage.getItem('@kalo_refresh_token'),
+          AsyncStorage.getItem('@kalo_id'),
+          AsyncStorage.getItem('@kalo_perfil'),
+          getBiometricEnabled(),
+        ]);
 
-      if (tokenSalvo && idSalvo && perfilSalvo) {
+        setBiometriaHabilitada(bioHabilitada);
+
+        if ((!tokenSalvo && !refreshSalvo) || !idSalvo || !perfilSalvo) {
+          return;
+        }
+
+        if (bioHabilitada) {
+          const ok = await authenticate('Desbloqueie o Kalo com biometria');
+          if (!ok) return;
+        }
+
+        if (refreshSalvo) {
+          try {
+            const resposta = await fetch(`${getApiUrl()}/usuarios/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: refreshSalvo }),
+            });
+
+            if (resposta.status === 401) {
+              await limparTokensLogout();
+              return;
+            }
+
+            if (resposta.ok) {
+              const dados = await resposta.json();
+              if (dados.token && dados.refresh_token) {
+                await AsyncStorage.setItem('@kalo_token', dados.token);
+                await AsyncStorage.setItem('@kalo_refresh_token', dados.refresh_token);
+              }
+            }
+          } catch (erro) {
+            // Se falhar por rede offline, mantém os tokens salvos
+            console.error('Erro ao renovar sessão inicial:', erro);
+          }
+        }
+
+        const perfilParseado = JSON.parse(perfilSalvo);
+        const onboardingOk = Boolean(perfilParseado.onboardingCompleto ?? true);
+
+        setPerfil((atual) => ({ ...atual, ...perfilParseado }));
+        setOnboardingCompleto(onboardingOk);
         setUsuarioId(idSalvo);
-        setPerfil((atual) => ({ ...atual, ...JSON.parse(perfilSalvo) }));
-        carregarPlano(true);
-        carregarFrequencia();
-        carregarComunidade();
+
+        carregarPesosUsuario(idSalvo);
+        if (onboardingOk) {
+          carregarPlano(true);
+          carregarFrequencia();
+          carregarComunidade();
+        }
+      } finally {
+        setCarregandoSessao(false);
       }
     }
     carregarSessao();
-  }, [carregarPlano, carregarFrequencia, carregarComunidade]);
+  }, [carregarPesosUsuario, carregarPlano, carregarFrequencia, carregarComunidade]);
 
-  
-  // Guarda token e perfil após login/cadastro e carrega o histórico de peso
-  const iniciarSessao = async (usuario: any, novoToken: string) => {
+
+  // Guarda tokens e perfil após login/cadastro e carrega o histórico de peso
+  const iniciarSessao = async (usuario: any, novoToken: string, novoRefreshToken?: string) => {
+    const onboardingOk = Boolean(usuario.onboarding_completo);
+    setOnboardingCompleto(onboardingOk);
     setUsuarioId(usuario.id);
 
     const novoPerfil = {
@@ -260,37 +336,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     await AsyncStorage.setItem('@kalo_token', novoToken);
-    await AsyncStorage.setItem('@kalo_id', usuario.id);
-    await AsyncStorage.setItem('@kalo_perfil', JSON.stringify(novoPerfil));
-
-    try {
-      // Histórico de peso salvo no servidor, usado no gráfico do perfil
-      const medidas = await apiFetch(`/medidas/usuario/${usuario.id}`);
-      if (Array.isArray(medidas) && medidas.length > 0) {
-        setPesos(medidas.map((m: any) => ({ value: m.peso_kg, label: rotuloDeData(m.data_registro) })));
-      }
-    } catch (erro) {
-      console.error('Erro ao carregar o histórico de peso:', erro);
+    if (novoRefreshToken) {
+      await AsyncStorage.setItem('@kalo_refresh_token', novoRefreshToken);
     }
+    await AsyncStorage.setItem('@kalo_id', usuario.id);
+    await AsyncStorage.setItem('@kalo_perfil', JSON.stringify({ ...novoPerfil, onboardingCompleto: onboardingOk }));
+
+    await carregarPesosUsuario(usuario.id);
 
     // Quem ainda não fez o onboarding recebe o plano depois, já com nível e dias escolhidos
-    await carregarPlano(!!usuario.onboarding_completo);
+    await carregarPlano(onboardingOk);
     await carregarFrequencia();
     await carregarComunidade();
   };
 
-  // Apaga a sessão do estado e do celular
+  // Marca o onboarding como concluído para liberar as abas principais
+  const concluirOnboarding = useCallback(async () => {
+    setOnboardingCompleto(true);
+    const perfilSalvo = await AsyncStorage.getItem('@kalo_perfil');
+    if (perfilSalvo) {
+      const atualizado = { ...JSON.parse(perfilSalvo), onboardingCompleto: true };
+      await AsyncStorage.setItem('@kalo_perfil', JSON.stringify(atualizado));
+    }
+  }, []);
+
+  // Apaga a sessão do estado e do celular (mantém flag de biometria)
   const encerrarSessao = async () => {
     setUsuarioId(null);
+    setOnboardingCompleto(false);
     setAmizades(AMIZADES_VAZIAS);
     setDesafios(DESAFIOS_VAZIOS);
     setFeed([]);
     setFeedTemMais(false);
     convitesVistos.current = null;
-    await AsyncStorage.removeItem('@kalo_token');
-    await AsyncStorage.removeItem('@kalo_id');
-    await AsyncStorage.removeItem('@kalo_perfil');
+    await limparTokensLogout();
   };
+
+  // Pede confirmação biométrica, persiste a flag e atualiza o estado
+  const habilitarBiometria = useCallback(async () => {
+    const suportado = await isBiometricSupported();
+    if (!suportado) {
+      Alert.alert('Biometria indisponível', 'Este dispositivo não possui biometria cadastrada.');
+      return;
+    }
+    const ok = await authenticate('Confirme sua identidade para ativar a biometria');
+    if (ok) {
+      await storeBiometricEnabled(true);
+      setBiometriaHabilitada(true);
+    }
+  }, []);
+
+  // Autentica via biometria (usado na abertura do app)
+  const desbloquearComBiometria = useCallback(async (): Promise<boolean> => {
+    return authenticate('Desbloqueie o Kalo com biometria');
+  }, []);
 
   // Último peso registrado
   const pesoAtual = pesos[pesos.length - 1]?.value || 0;
@@ -453,10 +552,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Valores entregues a todas as telas
   const valor = useMemo(() => ({
-    usuarioId, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
+    usuarioId, carregandoSessao, onboardingCompleto, concluirOnboarding, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
     amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
-  }), [usuarioId, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
-    carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade]);
+    biometriaHabilitada, habilitarBiometria, desbloquearComBiometria,
+  }), [usuarioId, carregandoSessao, onboardingCompleto, concluirOnboarding, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
+    carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
+    biometriaHabilitada, habilitarBiometria, desbloquearComBiometria]);
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
 }

@@ -1,5 +1,5 @@
 from app.models.usuario import UsuarioModel
-from app.security import criar_token_acesso
+from app.security import criar_token_acesso, criar_token_refresh
 
 
 # Monta os dados do usuário enviados ao app
@@ -24,9 +24,11 @@ def dados_do_usuario(usuario: UsuarioModel) -> dict:
     }
 
 
-# Gera o token e devolve junto com os dados do usuário
+# Gera o token de acesso + refresh token e devolve junto com os dados do usuário
 def iniciar_sessao(usuario: UsuarioModel) -> dict:
+    payload = {"sub": str(usuario.id)}
     return {
-        "token": criar_token_acesso({"sub": str(usuario.id)}),
+        "token": criar_token_acesso(payload),
+        "refresh_token": criar_token_refresh(payload),
         "usuario": dados_do_usuario(usuario),
     }
