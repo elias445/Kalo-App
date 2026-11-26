@@ -27,6 +27,7 @@ class UsuarioModel(Base):
     # Código curto para os amigos adicionarem o usuário
     codigo_convite = Column(String, unique=True, index=True, nullable=True)
 
-    # Ligações com o histórico de peso e o diário de alimentos
+    # Ligações com o histórico de peso, o diário de alimentos e as preferências de notificação
     medidas = relationship("HistoricoMedidasModel", back_populates="usuario")
     refeicoes = relationship("DiarioAlimentosModel", back_populates="usuario")
+    preferencia_notificacao = relationship("PreferenciaNotificacaoModel", back_populates="usuario", uselist=False)

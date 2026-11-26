@@ -10,3 +10,4 @@ from .sessao_treino import SessaoTreino
 from .amizade import Amizade
 from .desafio import Desafio, DesafioParticipante
 from .atividade import Atividade, Curtida
+from .preferencia_notificacao import PreferenciaNotificacaoModel

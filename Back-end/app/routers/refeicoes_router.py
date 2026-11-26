@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
 from sqlalchemy.orm import Session
+from typing import Optional
+from datetime import date
 from app.database import get_db
 from app.schemas.diario_alimentos import DiarioAlimentosCreate, DiarioAlimentosResponse
 from app.security import obter_usuario_logado
@@ -12,10 +14,11 @@ from app.use_cases.remover_refeicao import remover_refeicao
 router = APIRouter(prefix="/refeicoes", tags=["Diário de Refeições"])
 
 
-# GET /refeicoes/usuario/{id}: lista o diário do usuário
+# GET /refeicoes/usuario/{id}?data=YYYY-MM-DD: lista o diário do usuário, filtrado pela data quando informada
 @router.get("/usuario/{usuario_id}")
 def listar_refeicoes_usuario(
     usuario_id: UUID4,
+    data: Optional[date] = Query(default=None, description="Filtrar pelo dia (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     usuario_id_logado: str = Depends(obter_usuario_logado),
 ):
@@ -23,7 +26,7 @@ def listar_refeicoes_usuario(
     if str(usuario_id) != usuario_id_logado:
         raise HTTPException(status_code=403, detail="Acesso negado ao diário de outro usuário")
 
-    return listar_refeicoes(db=db, usuario_id=usuario_id)
+    return listar_refeicoes(db=db, usuario_id=usuario_id, data=data)
 
 
 # POST /refeicoes/: adiciona um alimento ao diário
