@@ -19,7 +19,8 @@ class AlimentoBusca(BaseModel):
     embalagem_g: Optional[float] = None
 
 
-# Resposta da busca: lista de alimentos e avisos
+# Resposta da busca: lista de alimentos, paginação e avisos
 class BuscaAlimentosResponse(BaseModel):
     resultados: List[AlimentoBusca]
     avisos: List[str] = []
+    tem_mais: bool = False

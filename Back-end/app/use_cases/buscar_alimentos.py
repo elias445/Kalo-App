@@ -2,7 +2,7 @@ import json
 import re
 import urllib.parse
 import urllib.request
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.alimento import AlimentoModel
@@ -17,13 +17,16 @@ USER_AGENT = "Kalo/1.0 (projeto academico)"
 TIMEOUT_SEGUNDOS = 6
 
 
-# Busca no nosso banco: todas as palavras digitadas precisam estar no nome
-def buscar_na_taco(db: Session, termo: str, limite: int) -> List[AlimentoBusca]:
+# Busca paginada no nosso banco: se houver termo, todas as palavras precisam estar no nome
+def buscar_na_taco(db: Session, termo: str = "", limite: int = 20, offset: int = 0) -> Tuple[List[AlimentoBusca], bool]:
     consulta = db.query(AlimentoModel)
-    for palavra in normalizar(termo).split():
+    palavras = normalizar(termo).split()
+    for palavra in palavras:
         consulta = consulta.filter(AlimentoModel.nome_busca.contains(palavra))
 
-    encontrados = consulta.order_by(func.length(AlimentoModel.nome), AlimentoModel.nome).limit(limite).all()
+    ordenacao = (func.length(AlimentoModel.nome), AlimentoModel.nome) if palavras else (AlimentoModel.nome,)
+    encontrados = consulta.order_by(*ordenacao).offset(offset).limit(limite + 1).all()
+    tem_mais = len(encontrados) > limite
 
     return [
         AlimentoBusca(
@@ -38,8 +41,8 @@ def buscar_na_taco(db: Session, termo: str, limite: int) -> List[AlimentoBusca]:
             fibra_100g=a.fibra_100g,
             nutrientes=a.nutrientes or {},
         )
-        for a in encontrados
-    ]
+        for a in encontrados[:limite]
+    ], tem_mais
 
 # Devolve o valor se for número
 def _numero(valor) -> Optional[float]:
@@ -93,11 +96,14 @@ def _embalagem_g(produto: dict) -> Optional[float]:
 
 
 # Busca produtos do Brasil no Open Food Facts
-def buscar_industrializados(termo: str, limite: int) -> List[AlimentoBusca]:
+def buscar_industrializados(termo: str, limite: int, offset: int = 0) -> Tuple[List[AlimentoBusca], bool]:
+    pagina = (offset // limite) + 1
+    tamanho_pagina = limite * 3
     parametros = urllib.parse.urlencode(
         {
             "q": f'{termo} countries_tags:"en:brazil"',
-            "page_size": limite * 3,
+            "page": pagina,
+            "page_size": tamanho_pagina,
             "fields": "code,product_name,brands,nutriments,serving_size,serving_quantity,quantity",
             "langs": "pt",
         }
@@ -153,4 +159,5 @@ def buscar_industrializados(termo: str, limite: int) -> List[AlimentoBusca]:
         )
         if len(resultados) >= limite:
             break
-    return resultados
+    tem_mais = len(resultados) >= limite and len(dados.get("hits", [])) >= tamanho_pagina
+    return resultados, tem_mais
