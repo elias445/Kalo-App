@@ -43,23 +43,24 @@ const formatarKg = (n: number) => n.toFixed(1).replace('.', ',');
 export default function PerfilScreen() {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
-  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia, biometriaHabilitada, habilitarBiometria, encerrarSessao, usuarioId } = useApp();
+  const { perfil, pesos, pesoAtual, frequencia, carregarFrequencia, carregarPesosUsuario, biometriaHabilitada, habilitarBiometria, encerrarSessao, usuarioId } = useApp();
 
   // Estado das preferências de notificação
   const [prefs, setPrefs] = useState<PreferenciasNotificacao>({ ...PREFERENCIAS_PADRAO });
   const [salvandoPrefs, setSalvandoPrefs] = useState(false);
 
-  // Atualiza a frequência sempre que a aba é aberta
+  // Atualiza a frequência e o histórico de peso sempre que a aba é aberta
   useFocusEffect(
     useCallback(() => {
       carregarFrequencia();
-      // Carrega as preferências de notificação do servidor
       if (usuarioId) {
+        carregarPesosUsuario(usuarioId);
+        // Carrega as preferências de notificação do servidor
         apiFetch(`/notificacoes/${usuarioId}`)
           .then((dados) => { if (dados) setPrefs(dados as PreferenciasNotificacao); })
           .catch(() => { }); // Silencia: mantém os padrões
       }
-    }, [carregarFrequencia, usuarioId])
+    }, [carregarFrequencia, carregarPesosUsuario, usuarioId])
   );
 
   // Encerra a sessão e o Auth Gate volta para login
@@ -109,11 +110,12 @@ export default function PerfilScreen() {
   };
 
   // Dados e medidas do gráfico de peso
-  const variacao = pesoAtual - pesos[0].value;
-  const emQueda = variacao <= 0;
   const valores = pesos.map((p) => p.value);
-  const eixoMin = Math.floor((Math.min(...valores) - 2) / 5) * 5;
-  const eixoSecoes = Math.max(1, Math.ceil((Math.max(...valores) - eixoMin) / 5));
+  const pesoInicial = pesos.length > 0 ? pesos[0].value : pesoAtual;
+  const variacao = pesos.length > 1 ? pesoAtual - pesoInicial : 0;
+  const emQueda = variacao <= 0;
+  const eixoMin = valores.length > 0 ? Math.floor((Math.min(...valores) - 2) / 5) * 5 : Math.max(0, Math.floor((pesoAtual - 2) / 5) * 5);
+  const eixoSecoes = valores.length > 0 ? Math.max(1, Math.ceil((Math.max(...valores) - eixoMin) / 5)) : 1;
   const larguraRotulosY = 52;
   const larguraGrafico = width - 48 - 36 - larguraRotulosY - 8;
   const espacamento = pesos.length > 1 ? (larguraGrafico - 28) / (pesos.length - 1) : 0;
@@ -210,35 +212,41 @@ export default function PerfilScreen() {
         </View>
 
         <View style={{ marginLeft: -6 }}>
-          <LineChart
-            data={pesos.map((p) => ({ value: p.value, label: p.label }))}
-            areaChart
-            curved
-            width={larguraGrafico}
-            height={140}
-            initialSpacing={14}
-            endSpacing={14}
-            spacing={espacamento}
-            thickness={3}
-            color={colors.cyan}
-            startFillColor={colors.cyan}
-            endFillColor={colors.cyan}
-            startOpacity={0.3}
-            endOpacity={0.01}
-            dataPointsColor={colors.cyan}
-            dataPointsRadius={4}
-            hideRules
-            yAxisThickness={0}
-            xAxisThickness={0}
-            yAxisLabelWidth={larguraRotulosY}
-            yAxisLabelSuffix=" kg"
-            yAxisTextStyle={{ color: colors.dim, fontSize: 10 }}
-            xAxisLabelTextStyle={{ color: colors.dim, fontSize: 10 }}
-            yAxisOffset={eixoMin}
-            stepValue={5}
-            noOfSections={eixoSecoes}
-            disableScroll
-          />
+          {pesos.length > 0 ? (
+            <LineChart
+              data={pesos.map((p) => ({ value: p.value, label: p.label }))}
+              areaChart={pesos.length > 1}
+              curved={pesos.length > 1}
+              width={larguraGrafico}
+              height={140}
+              initialSpacing={pesos.length > 1 ? 14 : Math.max(14, larguraGrafico / 2 - 14)}
+              endSpacing={14}
+              spacing={espacamento}
+              thickness={3}
+              color={colors.cyan}
+              startFillColor={colors.cyan}
+              endFillColor={colors.cyan}
+              startOpacity={0.3}
+              endOpacity={0.01}
+              dataPointsColor={colors.cyan}
+              dataPointsRadius={4}
+              hideRules
+              yAxisThickness={0}
+              xAxisThickness={0}
+              yAxisLabelWidth={larguraRotulosY}
+              yAxisLabelSuffix=" kg"
+              yAxisTextStyle={{ color: colors.dim, fontSize: 10 }}
+              xAxisLabelTextStyle={{ color: colors.dim, fontSize: 10 }}
+              yAxisOffset={eixoMin}
+              stepValue={5}
+              noOfSections={eixoSecoes}
+              disableScroll
+            />
+          ) : (
+            <View className="py-8 items-center justify-center">
+              <Text className="text-muted text-xs">Nenhum peso registrado ainda</Text>
+            </View>
+          )}
         </View>
       </Card>
 

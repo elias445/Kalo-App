@@ -124,7 +124,7 @@ export default function PlanoGeradoScreen() {
         })}
       </Card>
 
-      <GradientButton label="Começar" onPress={iniciar} icon={<ArrowRight color="#FFFFFF" size={20} strokeWidth={2.5} />} />
+      <GradientButton label="Horários das refeições" onPress={iniciar} icon={<ArrowRight color="#FFFFFF" size={20} strokeWidth={2.5} />} />
     </Screen>
   );
 }

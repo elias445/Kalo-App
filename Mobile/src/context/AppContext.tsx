@@ -31,6 +31,7 @@ type AppState = {
   pesos: RegistroPeso[];
   pesoAtual: number;
   registrarPeso: (valor: number) => void;
+  carregarPesosUsuario: (id?: string) => Promise<void>;
   metas: Metas;
   plano: Record<string, DiaTreino>;
   salvarExercicio: (dia: string, exercicio: ExercicioCatalogo, substituirId?: string) => Promise<boolean>;
@@ -103,14 +104,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     diasSemana: ['Seg', 'Ter', 'Qui', 'Sex'],
   });
 
-  // Histórico de peso (exemplo até carregar o do servidor)
-  const [pesos, setPesos] = useState<RegistroPeso[]>([
-    { value: 80, label: '01/07' },
-    { value: 75.5, label: '01/08' },
-    { value: 70.5, label: '01/09' },
-    { value: 67, label: '01/10' },
-    { value: 64.5, label: '15/11' },
-  ]);
+  // Histórico de peso (inicia vazio e carrega do servidor/cadastro)
+  const [pesos, setPesos] = useState<RegistroPeso[]>([]);
 
   // Plano de treino (vem do servidor)
   const [plano, setPlano] = useState<Record<string, DiaTreino>>(planoVazio());
@@ -232,16 +227,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Busca o histórico de peso salvo no servidor para o gráfico do perfil
-  const carregarPesosUsuario = useCallback(async (id: string) => {
+  const carregarPesosUsuario = useCallback(async (id?: string) => {
+    const alvo = id || usuarioId;
+    if (!alvo) return;
     try {
-      const medidas = await apiFetch(`/medidas/usuario/${id}`);
+      const medidas = await apiFetch(`/medidas/usuario/${alvo}`);
       if (Array.isArray(medidas) && medidas.length > 0) {
         setPesos(medidas.map((m: any) => ({ value: m.peso_kg, label: rotuloDeData(m.data_registro) })));
       }
     } catch (erro) {
       console.error('Erro ao carregar o histórico de peso:', erro);
     }
-  }, []);
+  }, [usuarioId]);
 
   // Ao abrir o app, restaura a sessão salva no celular com biometria única e renovação de token
   useEffect(() => {
@@ -552,10 +549,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Valores entregues a todas as telas
   const valor = useMemo(() => ({
-    usuarioId, carregandoSessao, onboardingCompleto, concluirOnboarding, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
+    usuarioId, carregandoSessao, onboardingCompleto, concluirOnboarding, iniciarSessao, encerrarSessao, perfil, atualizarPerfil, pesos, pesoAtual, registrarPeso, carregarPesosUsuario, metas, plano, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
     amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
     biometriaHabilitada, habilitarBiometria, desbloquearComBiometria,
-  }), [usuarioId, carregandoSessao, onboardingCompleto, concluirOnboarding, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, atualizarPerfil, registrarPeso, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
+  }), [usuarioId, carregandoSessao, onboardingCompleto, concluirOnboarding, perfil, pesos, pesoAtual, metas, plano, amizades, desafios, feed, feedTemMais, carregarMaisFeed, convitesPendentes, atualizarPerfil, registrarPeso, carregarPesosUsuario, salvarExercicio, removerExercicio, gerarPlano, recarregarPlano, frequencia, carregarFrequencia, registrarTreino,
     carregarComunidade, convidarAmigo, responderConviteAmizade, removerAmizade, criarDesafio, responderConviteDesafio, carregarRanking, curtirAtividade,
     biometriaHabilitada, habilitarBiometria, desbloquearComBiometria]);
 

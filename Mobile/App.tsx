@@ -120,7 +120,6 @@ function NavegadorRaiz() {
             <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} />
             <Stack.Screen name="AdicionarAmigo" component={AdicionarAmigoScreen} />
             <Stack.Screen name="NovoDesafio" component={NovoDesafioScreen} />
-            <Stack.Screen name="OnboardingNotificacoes" component={OnboardingNotificacoesScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -36,7 +36,7 @@ const ajustarMinuto = (m: number, delta: number) => ((m + delta + 60) % 60);
 // Tela de configuração de lembretes de refeição (pós-onboarding)
 export default function OnboardingNotificacoesScreen() {
   const navigation = useNavigation();
-  const { usuarioId } = useApp();
+  const { usuarioId, concluirOnboarding } = useApp();
   const [prefs, setPrefs] = useState<PreferenciasNotificacao>({ ...PREFERENCIAS_PADRAO });
   const [salvando, setSalvando] = useState(false);
 
@@ -54,33 +54,45 @@ export default function OnboardingNotificacoesScreen() {
     setPrefs((p) => ({ ...p, [chave]: ajustarMinuto(p[chave] as number, delta) }));
   };
 
-  // Salva as preferências e agenda os lembretes
+  // Salva as preferências, agenda os lembretes e conclui o onboarding liberando o app (Home)
   const salvarEContinuar = async () => {
-    if (!usuarioId) return;
     setSalvando(true);
     try {
-      await apiFetch('/notificacoes/', {
-        method: 'PUT',
-        body: JSON.stringify({ usuario_id: usuarioId, ...prefs }),
-      });
-      await configurarLembretesDiarios(usuarioId);
-      navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
+      if (usuarioId) {
+        await apiFetch('/notificacoes/', {
+          method: 'PUT',
+          body: JSON.stringify({ usuario_id: usuarioId, ...prefs }),
+        });
+        // Dispara a configuração local de notificações em background sem travar a navegação
+        configurarLembretesDiarios(usuarioId).catch((err) => {
+          console.error('Erro ao agendar notificações:', err);
+        });
+      }
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar os lembretes. Tente novamente.');
+      console.error('Erro ao salvar preferências de notificação:', error);
     } finally {
       setSalvando(false);
+      await concluirOnboarding();
     }
   };
 
-  // Pula e entra no app sem configurar notificações
-  const pular = () => {
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
+  // Pula a configuração e entra direto no app (Home)
+  const pular = async () => {
+    await concluirOnboarding();
   };
 
   return (
     <Screen>
       <View className="flex-row justify-between items-center mb-6">
-        <BackButton />
+        <BackButton
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('PlanoGerado' as never);
+            }
+          }}
+        />
         <Badge label="CONFIGURAÇÃO FINAL" tone="cyan" />
       </View>
 

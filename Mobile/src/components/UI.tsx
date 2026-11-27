@@ -36,10 +36,10 @@ export function IconButton({ children, onPress, style, size = 44 }: {
 }
 
 // Botão de voltar
-export function BackButton() {
+export function BackButton({ onPress }: { onPress?: () => void } = {}) {
   const navigation = useNavigation();
   return (
-    <IconButton onPress={() => navigation.goBack()}>
+    <IconButton onPress={onPress ? onPress : () => navigation.goBack()}>
       <ChevronLeft color={colors.muted} size={22} strokeWidth={2.2} />
     </IconButton>
   );
