@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Flame, ArrowRight, Moon } from 'lucide-react-native';
 import Screen from '../components/Screen';
@@ -12,18 +12,21 @@ import { useApp } from '../context/AppContext';
 import { DIAS, diaDeHoje, estimarTreino } from '../data/treino';
 import { colors, gradients } from '../theme';
 
-const ORDEM_SEMANA = [...DIAS.slice(1), DIAS[0]]; // Seg ... Dom
+// Semana de segunda a domingo
+const ORDEM_SEMANA = [...DIAS.slice(1), DIAS[0]];
 
+// Tela do plano gerado: meta diária e treino da semana
 export default function PlanoGeradoScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { perfil, metas, plano } = useApp();
   const hoje = diaDeHoje();
 
+  // Avança para a configuração de lembretes de refeição
   const iniciar = () => {
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] }));
+    navigation.navigate('OnboardingNotificacoes' as never);
   };
 
-  // Participação de cada macro nas calorias (carboidrato e proteína: 4 kcal/g, gordura: 9 kcal/g)
+  // Parte de cada macro nas calorias (carbo e proteína: 4 kcal/g, gordura: 9 kcal/g)
   const macros = [
     { nome: 'Carboidratos', valor: metas.carboidrato, kcal: metas.carboidrato * 4 },
     { nome: 'Proteínas', valor: metas.proteina, kcal: metas.proteina * 4 },
@@ -41,7 +44,8 @@ export default function PlanoGeradoScreen() {
 
       <SectionLabel dot>Plano personalizado</SectionLabel>
       <Text className="text-white text-3xl font-extrabold mt-2">Seu plano está pronto!</Text>
-      <Text className="text-muted text-sm mt-2 mb-6">Objetivo: {perfil.objetivo}</Text>
+      <Text className="text-muted text-sm mt-2">Objetivo: {perfil.objetivo}</Text>
+      <Text className="text-muted text-sm mt-1 mb-6">{perfil.nivel}  •  {perfil.diasSemana.length} dias por semana</Text>
 
       <HeroCard padding={26} style={{ marginBottom: 16 }} contentStyle={{ alignItems: 'center' }}>
         <View style={{ position: 'absolute', right: -14, top: -16, opacity: 0.1 }}>
@@ -120,7 +124,7 @@ export default function PlanoGeradoScreen() {
         })}
       </Card>
 
-      <GradientButton label="Começar" onPress={iniciar} icon={<ArrowRight color="#FFFFFF" size={20} strokeWidth={2.5} />} />
+      <GradientButton label="Horários das refeições" onPress={iniciar} icon={<ArrowRight color="#FFFFFF" size={20} strokeWidth={2.5} />} />
     </Screen>
   );
 }

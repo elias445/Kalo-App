@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import { colors, gradients, glow } from '../theme';
 
-/** Rótulo pequeno em caixa-alta, usado acima de títulos e seções. */
+// Título pequeno em maiúsculas
 export function SectionLabel({ children, tone = 'cyan', dot = false }: { children: string; tone?: 'cyan' | 'muted'; dot?: boolean }) {
   const color = tone === 'cyan' ? colors.cyan : colors.muted;
   return (
@@ -16,6 +16,7 @@ export function SectionLabel({ children, tone = 'cyan', dot = false }: { childre
   );
 }
 
+// Botão quadrado só com ícone
 export function IconButton({ children, onPress, style, size = 44 }: {
   children: React.ReactNode;
   onPress?: () => void;
@@ -34,15 +35,17 @@ export function IconButton({ children, onPress, style, size = 44 }: {
   );
 }
 
-export function BackButton() {
+// Botão de voltar
+export function BackButton({ onPress }: { onPress?: () => void } = {}) {
   const navigation = useNavigation();
   return (
-    <IconButton onPress={() => navigation.goBack()}>
+    <IconButton onPress={onPress ? onPress : () => navigation.goBack()}>
       <ChevronLeft color={colors.muted} size={22} strokeWidth={2.2} />
     </IconButton>
   );
 }
 
+// Cores de cada tipo de selo
 const BADGE_TONES = {
   cyan: { color: colors.cyan, bg: 'rgba(0,209,255,0.10)', border: 'rgba(0,209,255,0.30)' },
   ok: { color: colors.ok, bg: 'rgba(34,197,94,0.10)', border: 'rgba(34,197,94,0.30)' },
@@ -50,6 +53,7 @@ const BADGE_TONES = {
   violet: { color: '#A78BFA', bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.35)' },
 };
 
+// Selo com texto curto
 export function Badge({ label, icon, tone = 'cyan' }: { label: string; icon?: React.ReactNode; tone?: keyof typeof BADGE_TONES }) {
   const t = BADGE_TONES[tone];
   return (
@@ -63,6 +67,7 @@ export function Badge({ label, icon, tone = 'cyan' }: { label: string; icon?: Re
   );
 }
 
+// Barra de progresso
 export function ProgressBar({ progress, height = 6 }: { progress: number; height?: number }) {
   const pct = Math.max(0, Math.min(1, progress)) * 100;
   return (
@@ -77,15 +82,17 @@ export function ProgressBar({ progress, height = 6 }: { progress: number; height
   );
 }
 
-export function Chip({ label, selected, onPress, flex = false }: { label: string; selected: boolean; onPress: () => void; flex?: boolean }) {
+// Botão de seleção em formato de pílula
+export function Chip({ label, selected, onPress, flex = false, ajustar = false }: { label: string; selected: boolean; onPress: () => void; flex?: boolean; ajustar?: boolean }) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
       style={{
         flex: flex ? 1 : undefined,
+        flexGrow: ajustar ? 1 : undefined,
         alignItems: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: ajustar ? 12 : 16,
         paddingVertical: 13,
         borderRadius: 16,
         borderWidth: 1,
@@ -93,12 +100,12 @@ export function Chip({ label, selected, onPress, flex = false }: { label: string
         backgroundColor: selected ? 'rgba(0,209,255,0.10)' : colors.surface,
       }}
     >
-      <Text style={{ color: selected ? colors.cyan : '#FFFFFF', fontWeight: '700', fontSize: 14 }}>{label}</Text>
+      <Text numberOfLines={ajustar ? 1 : undefined} style={{ color: selected ? colors.cyan : '#FFFFFF', fontWeight: '700', fontSize: ajustar ? 13 : 14 }}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-/** Quadradinho de ícone com brilho (logo, treino, vazio). */
+// Quadro grande para ícone
 export function IconTile({ children, size = 56 }: { children: React.ReactNode; size?: number }) {
   return (
     <View
@@ -118,7 +125,7 @@ export function IconTile({ children, size = 56 }: { children: React.ReactNode; s
   );
 }
 
-/** Pílula informativa com ícone (tempo, kcal, quantidade...). */
+// Pílula com ícone e texto (tempo, kcal...)
 export function InfoChip({ icon, texto }: { icon: React.ReactNode; texto: string }) {
   return (
     <View
@@ -131,7 +138,7 @@ export function InfoChip({ icon, texto }: { icon: React.ReactNode; texto: string
   );
 }
 
-/** Quadradinho de ícone pequeno, tingido de ciano. */
+// Quadro pequeno para ícone
 export function MiniTile({ children, size = 40 }: { children: React.ReactNode; size?: number }) {
   return (
     <View
@@ -143,7 +150,7 @@ export function MiniTile({ children, size = 40 }: { children: React.ReactNode; s
   );
 }
 
-/** Avatar com as iniciais do nome. `anel` desenha um contorno colorido (ex.: medalha ou "você"). */
+// Círculo com as iniciais do nome
 export function Avatar({ nome, size = 44, anel }: { nome: string; size?: number; anel?: string }) {
   const iniciais = nome.trim().split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || '?';
   return (

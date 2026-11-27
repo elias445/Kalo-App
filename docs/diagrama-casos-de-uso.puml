@@ -1,16 +1,31 @@
 @startuml
 left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor<<novo>> #DFF3FF
+  BorderColor<<novo>> #0A5CFF
+}
+hide stereotype
 
 actor "Usuário" as user
 
-rectangle "Aplicativo Fitness" {
-  usecase "Realizar Autenticação" as UC1
+rectangle "Kalo - Aplicativo Fitness" {
+
+  usecase "Realizar Login" as UC1
   usecase "Preencher Perfil e Objetivo" as UC2
   usecase "Visualizar Plano e Metas" as UC3
   usecase "Adaptar Plano de Treino" as UC4
   usecase "Registrar Consumo Alimentar" as UC5
   usecase "Buscar Alimentos" as UC6
   usecase "Acompanhar Evolução" as UC7
+  usecase "Fazer Cadastro" as UC8 <<novo>>
+  usecase "Editar Perfil" as UC9 <<novo>>
+  usecase "Registrar Treino Concluído" as UC10 <<novo>>
+  usecase "Registrar Peso" as UC11 <<novo>>
+  usecase "Participar de Desafios" as UC12 <<novo>>
+  usecase "Criar Novo Desafio" as UC13 <<novo>>
+  usecase "Adicionar Amigo" as UC14 <<novo>>
+  
 }
 
 user --> UC1
@@ -19,7 +34,17 @@ user --> UC3
 user --> UC4
 user --> UC5
 user --> UC7
+user --> UC8
+user --> UC9
+user --> UC10
+user --> UC11
+user --> UC12
+user --> UC14
 
+
+UC8 ..> UC1 : <<extend>>
 UC5 ..> UC6 : <<include>>
+UC11 ..> UC7 : <<extend>>
+UC13 ..> UC12 : <<extend>>
 
 @enduml

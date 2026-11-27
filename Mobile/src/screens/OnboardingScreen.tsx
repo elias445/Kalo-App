@@ -4,33 +4,83 @@ import { useNavigation } from '@react-navigation/native';
 import { ChevronDown, Zap, Target } from 'lucide-react-native';
 import Screen from '../components/Screen';
 import { NumberRow } from '../components/Field';
+import SeletorDias from '../components/SeletorDias';
 import OptionSheet from '../components/OptionSheet';
 import { GradientButton } from '../components/Buttons';
 import { BackButton, Badge, Chip, ProgressBar } from '../components/UI';
 import { useApp } from '../context/AppContext';
-import { OBJETIVOS, SEXOS } from '../data/perfil';
+import { DIAS_TREINO, NIVEIS, OBJETIVOS, SEXOS } from '../data/perfil';
 import { colors } from '../theme';
+import { apiFetch } from '../services/api';
 
+
+// Tela de dados biométricos (passo 1 do onboarding)
 export default function OnboardingScreen() {
   const navigation = useNavigation();
-  const { perfil, pesoAtual, atualizarPerfil, registrarPeso } = useApp();
+  const { perfil, pesoAtual, atualizarPerfil, registrarPeso, usuarioId, gerarPlano: gerarPlanoNoServidor } = useApp();
 
   const [sexo, setSexo] = useState(perfil.sexo);
   const [idade, setIdade] = useState(perfil.idade);
   const [altura, setAltura] = useState(perfil.altura);
   const [peso, setPeso] = useState(String(pesoAtual).replace('.', ','));
   const [objetivo, setObjetivo] = useState(perfil.objetivo);
+  const [nivel, setNivel] = useState(perfil.nivel);
+  const [diasSemana, setDiasSemana] = useState<string[]>(perfil.diasSemana);
   const [sheetAberto, setSheetAberto] = useState(false);
 
-  const gerarPlano = () => {
+  // Salva os dados e o primeiro peso no servidor e abre o plano gerado
+  const gerarPlano = async () => {
     const pesoNumero = parseFloat(peso.replace(',', '.'));
+    
     if (!Number(idade) || !Number(altura) || !pesoNumero || !objetivo) {
       Alert.alert('Dados incompletos', 'Preencha idade, altura, peso e objetivo para gerar seu plano.');
       return;
     }
-    atualizarPerfil({ sexo, idade, altura, objetivo });
-    if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
-    navigation.navigate('PlanoGerado' as never);
+
+    if (diasSemana.length < 2 || diasSemana.length > 6) {
+      Alert.alert('Dias de treino', 'Escolha de 2 a 6 dias da semana para treinar.');
+      return;
+    }
+
+    try {
+      await apiFetch('/usuarios/onboarding', {
+        method: 'PUT',
+        body: JSON.stringify({
+          sexo: sexo,
+          idade: Number(idade),
+          altura: Number(altura),
+          peso_atual: pesoNumero,
+          objetivo: objetivo,
+          nivel_experiencia: nivel,
+          dias_semana: DIAS_TREINO.filter((d) => diasSemana.includes(d)),
+          dias_treino: diasSemana.length,
+        })
+      });
+
+      // O peso informado é o primeiro registro do histórico de peso
+      if (usuarioId) {
+        await apiFetch('/medidas/', {
+          method: 'POST',
+          body: JSON.stringify({ usuario_id: usuarioId, peso_kg: pesoNumero }),
+        });
+      }
+
+      atualizarPerfil({ sexo, idade, altura, objetivo, nivel, diasSemana: DIAS_TREINO.filter((d) => diasSemana.includes(d)) });
+      if (pesoNumero !== pesoAtual) registrarPeso(pesoNumero);
+
+      // O servidor monta o plano de treino com o objetivo, o nível e os dias escolhidos
+      const gerou = await gerarPlanoNoServidor(true);
+      if (!gerou) {
+        Alert.alert('Erro', 'Seus dados foram salvos, mas não foi possível gerar o plano de treino. Tente de novo.');
+        return;
+      }
+      
+      navigation.navigate('PlanoGerado' as never);
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível salvar os dados no servidor.');
+    }
   };
 
   return (
@@ -80,6 +130,18 @@ export default function OnboardingScreen() {
         </View>
         <ChevronDown color={colors.cyan} size={20} strokeWidth={2.2} />
       </TouchableOpacity>
+
+      <Text className="text-white text-sm font-bold mb-3">Nível de experiência</Text>
+      <View className="flex-row mb-6" style={{ gap: 10 }}>
+        {NIVEIS.map((opcao) => (
+          <Chip key={opcao} label={opcao} selected={nivel === opcao} onPress={() => setNivel(opcao)} flex ajustar />
+        ))}
+      </View>
+
+      <Text className="text-white text-sm font-bold mb-3">Dias de treino</Text>
+      <View className="mb-10">
+        <SeletorDias selecionados={diasSemana} onChange={setDiasSemana} />
+      </View>
 
       <GradientButton
         variant="cyan"

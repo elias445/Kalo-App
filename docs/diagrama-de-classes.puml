@@ -1,0 +1,83 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty methods
+
+class Usuario <<usuarios>> {
+  - id : UUID <<PK>>
+  - nome : String
+  - email : String <<único>>
+  - senha_hash : String
+  - sexo : String
+  - idade : Integer
+  - altura : Float
+  - peso_atual : Float
+  - objetivo : String
+  - nivel_experiencia : String
+}
+
+class TreinoPlanejado <<treinos_planejados>> {
+  - id : UUID <<PK>>
+  - usuario_id : UUID <<FK>>
+  - dia_semana : String
+  - grupo_muscular : String
+  - nome_exercicio : String
+  - wger_exercicio_id : Integer
+  - series_planejadas : String
+  - ordem : Integer
+}
+
+class HistoricoTreino <<historico_treinos>> {
+  - id : UUID <<PK>>
+  - usuario_id : UUID <<FK>>
+  - treino_planejado_id : UUID <<FK>>
+  - data_treino : Date
+  - carga_kg : Float
+  - concluido : Boolean
+}
+
+class HistoricoMedidas <<historico_medidas>> {
+  - id : UUID <<PK>>
+  - usuario_id : UUID <<FK>>
+  - data_registro : DateTime
+  - peso_kg : Float
+  - percentual_gordura : Float
+}
+
+class DiarioAlimentos <<diario_alimentos>> {
+  - id : UUID <<PK>>
+  - usuario_id : UUID <<FK>>
+  - data_consumo : Date
+  - tipo_refeicao : String
+  - nome_alimento : String
+  - quantidade_gramas : Float
+  - calorias : Float
+  - carboidratos : Float
+  - proteinas : Float
+  - gorduras : Float
+}
+
+class Alimento <<alimentos>> {
+  - id : UUID <<PK>>
+  - nome : String
+  - nome_busca : String
+  - categoria : String
+  - fonte : String
+  - kcal_100g : Float
+  - proteina_100g : Float
+  - carboidrato_100g : Float
+  - gordura_100g : Float
+  - fibra_100g : Float
+  - nutrientes : JSON
+}
+
+Usuario "1" -- "0..*" TreinoPlanejado : planeja
+Usuario "1" -- "0..*" HistoricoTreino : realiza
+Usuario "1" -- "0..*" HistoricoMedidas : registra
+Usuario "1" -- "0..*" DiarioAlimentos : consome
+TreinoPlanejado "1" -- "0..*" HistoricoTreino : é executado em
+
+DiarioAlimentos .. Alimento : consulta
+
+@enduml

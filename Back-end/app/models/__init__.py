@@ -1,5 +1,13 @@
+# Importa todos os models para registrá-los no SQLAlchemy
 from .usuario import UsuarioModel
 from .historico_medidas import HistoricoMedidasModel
 from .diario_alimentos import DiarioAlimentosModel
 from .treino_planejado import TreinoPlanejado
 from .historico_treino import HistoricoTreino
+from .alimento import AlimentoModel
+from .exercicio import ExercicioModel
+from .sessao_treino import SessaoTreino
+from .amizade import Amizade
+from .desafio import Desafio, DesafioParticipante
+from .atividade import Atividade, Curtida
+from .preferencia_notificacao import PreferenciaNotificacaoModel

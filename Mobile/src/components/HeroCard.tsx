@@ -5,12 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 type Props = {
   children: React.ReactNode;
   padding?: number;
-  /** estilo do conteúdo interno (ex.: flexDirection: 'row') */
   contentStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
 };
 
-/** Cartão de destaque com gradiente azul e borda ciano. */
+// Cartão de destaque com fundo em gradiente
 export default function HeroCard({ children, padding = 22, contentStyle, style }: Props) {
   return (
     <View

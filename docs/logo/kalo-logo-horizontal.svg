@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1562" height="700" viewBox="0 0 1562 700">
+  <defs>
+    <linearGradient id="kalo" gradientUnits="userSpaceOnUse" x1="30.0" y1="644.0" x2="618.0" y2="56.0">
+      <stop offset="0" stop-color="#0A5CFF"/><stop offset="1" stop-color="#00D1FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M 582.8 245.4 A 279.1 279.1 0 1 1 428.6 91.2" fill="none" stroke="url(#kalo)" stroke-width="29.8" stroke-linecap="round"/>
+  <g fill="url(#kalo)">
+    <polygon points="193.9,195.5 257.4,195.5 257.4,504.5 193.9,504.5"/>
+    <polygon points="278.5,339.4 356.8,339.4 454.1,195.5 375.8,195.5"/>
+    <polygon points="278.5,360.6 356.8,360.6 454.1,504.5 375.8,504.5"/>
+  </g>
+  <text x="688.0" y="483.0" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif" font-weight="700" font-size="400" fill="#FFFFFF">Kalo</text>
+</svg>

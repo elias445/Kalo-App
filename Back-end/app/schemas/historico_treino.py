@@ -8,10 +8,12 @@ class HistoricoTreinoBase(BaseModel):
     carga_kg: Optional[float] = None
     concluido: bool = False
 
+# Dados recebidos ao registrar um treino
 class HistoricoTreinoCreate(HistoricoTreinoBase):
     usuario_id: UUID
     treino_planejado_id: UUID
 
+# Dados devolvidos ao app
 class HistoricoTreinoResponse(HistoricoTreinoBase):
     id: UUID
     usuario_id: UUID

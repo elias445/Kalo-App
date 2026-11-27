@@ -9,15 +9,20 @@ import { OutlineButton } from '../components/Buttons';
 import { ICONES_REFEICAO } from '../components/iconesRefeicao';
 import { BackButton, IconButton, IconTile, InfoChip, MiniTile, SectionLabel } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { useRefeicoes } from '../context/RefeicoesContext';
 import { colors } from '../theme';
 
+// Tela com os alimentos de uma refeição
 export default function DetalheRefeicaoScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const refeicao: string = route.params?.refeicao ?? 'Refeição';
-  const { refeicoes, removerAlimento, metas } = useApp();
   const Icone = ICONES_REFEICAO[refeicao] ?? UtensilsCrossed;
 
+  const { metas } = useApp();
+  const { refeicoes, removerAlimento } = useRefeicoes();
+
+  // Alimentos e totais da refeição
   const itens = refeicoes[refeicao] ?? [];
   const total = itens.reduce((soma, item) => soma + item.kcal, 0);
   const gramasTotais = itens.reduce((soma, item) => soma + item.gramas, 0);

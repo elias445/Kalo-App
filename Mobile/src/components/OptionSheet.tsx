@@ -12,7 +12,7 @@ type Props = {
   onClose: () => void;
 };
 
-/** Bottom sheet simples para escolher uma opção da lista. */
+// Lista de opções que sobe de baixo da tela
 export default function OptionSheet({ visible, title, options, selected, onSelect, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>

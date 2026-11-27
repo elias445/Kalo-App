@@ -8,9 +8,12 @@ type Props = TextInputProps & {
   icon?: LucideIcon;
   right?: React.ReactNode;
   labelRight?: React.ReactNode;
+  // Texto fixo e acinzentado antes do que a pessoa digita (ex.: o @ do usuário)
+  prefixo?: string;
 };
 
-export default function Field({ label, icon: Icon, right, labelRight, onFocus, onBlur, ...input }: Props) {
+// Campo de texto com ícone, rótulo e destaque ao focar
+export default function Field({ label, icon: Icon, right, labelRight, prefixo, onFocus, onBlur, ...input }: Props) {
   const [focado, setFocado] = useState(false);
 
   return (
@@ -32,6 +35,7 @@ export default function Field({ label, icon: Icon, right, labelRight, onFocus, o
         }}
       >
         {Icon && <Icon color={focado ? colors.cyan : colors.dim} size={18} strokeWidth={2} style={{ marginRight: 12 }} />}
+        {prefixo ? <Text style={{ color: colors.dim, fontSize: 16, marginRight: 2 }}>{prefixo}</Text> : null}
         <TextInput
           placeholderTextColor={colors.dim}
           selectionColor={colors.cyan}
@@ -47,7 +51,7 @@ export default function Field({ label, icon: Icon, right, labelRight, onFocus, o
   );
 }
 
-/** Linha de formulário: título + legenda à esquerda e valor numérico em caixa à direita. */
+// Linha com campo numérico e unidade (idade, altura, peso)
 export function NumberRow({ icon: Icon, title, hint, unit, value, onChangeText }: {
   icon?: LucideIcon;
   title: string;
